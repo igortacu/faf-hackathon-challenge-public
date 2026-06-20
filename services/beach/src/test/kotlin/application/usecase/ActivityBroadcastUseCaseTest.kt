@@ -125,7 +125,9 @@ private class InMemoryActivityRepository(
 }
 
 private class EmptyVisitorRepository : VisitorRepository {
-    override fun findById(id: String): Visitor? = null
+    // Booking now requires the visitor to exist and be checked in, so the
+    // broadcast tests provide a checked-in visitor for any id.
+    override fun findById(id: String): Visitor? = Visitor(id = id, checkedIn = true)
 
     override fun markCheckedIn(id: String) = Unit
 }
