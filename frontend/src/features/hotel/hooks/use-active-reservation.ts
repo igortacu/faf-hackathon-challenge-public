@@ -15,6 +15,10 @@ export function useActiveReservation() {
     queryKey: [...HOTEL_KEYS.RESERVATION, guest?.id],
     queryFn: () => getReservationByGuest(guest!.id),
     enabled: !!guest,
+    // A 404 means the guest has no active reservation — that's an expected
+    // state, not a transient failure. Skip retries so the form appears
+    // immediately instead of after a 30-second retry backoff.
+    retry: false,
   });
 
   const mutation = useMutation({

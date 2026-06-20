@@ -16,5 +16,7 @@ interface ActivityRepository {
 
     fun findParticipantsByActivityId(id: String): ActivityParticipants?
 
+    fun isVisitorBooked(visitorId: String): Boolean
+
     fun save(activity: Activity)
 }
