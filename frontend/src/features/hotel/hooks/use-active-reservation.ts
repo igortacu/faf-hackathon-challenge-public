@@ -20,8 +20,13 @@ export function useActiveReservation() {
   const mutation = useMutation({
     mutationFn: (id: string) => cancelReservation(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [...HOTEL_KEYS.RESERVATION],
+      // Evict the reservation entry entirely so the query goes back to
+      // pending state and the cancel card disappears immediately.
+      // invalidateQueries alone only marks it stale — the stale data would
+      // keep showing while the background refetch is in flight, re-enabling
+      // the cancel button before the 404 comes back.
+      queryClient.removeQueries({
+        queryKey: [...HOTEL_KEYS.RESERVATION, guest?.id],
       });
       queryClient.invalidateQueries({ queryKey: [...HOTEL_KEYS.ROOMS] });
     },

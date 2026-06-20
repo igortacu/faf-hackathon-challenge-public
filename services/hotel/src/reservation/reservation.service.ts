@@ -159,7 +159,8 @@ export class ReservationService {
                rm.type AS room_type
         FROM "Reservation" r
         JOIN "Room" rm ON rm.id = r.room_id
-        WHERE r.guest_id = ${Prisma.raw(`'${guestId}'`)}
+        WHERE r.guest_id = ${guestId}
+          AND r.status = 'CONFIRMED'
         ORDER BY r.check_in_day DESC
         LIMIT 1
       `,
@@ -186,24 +187,26 @@ export class ReservationService {
   }
 
   async cancel(id: string): Promise<CancelReservationResponseDto> {
-    // id is UUID generated server-side, not user-controlled string
-    await this.prisma.$executeRaw(
-      Prisma.sql`UPDATE "Reservation" SET status = 'CANCELLED' WHERE id = ${Prisma.raw(`'${id}'`)}`,
-    );
-
-    const existingReservation = await this.prisma.reservation.findFirst({
-      where: { id, status: ReservationStatus.CANCELLED },
+    const existing = await this.prisma.reservation.findFirst({
+      where: { id },
+      include: { room: true },
     });
 
-    if (!existingReservation) {
+    if (!existing) {
       throw new HttpException(
         { error: 'Reservation not found' },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    const reservation = await this.prisma.reservation.findUniqueOrThrow({
-      where: { id: existingReservation.id },
+    // Idempotent: already cancelled — return current state, no event emitted
+    if (existing.status === ReservationStatus.CANCELLED) {
+      return { id: existing.id, status: existing.status };
+    }
+
+    const reservation = await this.prisma.reservation.update({
+      where: { id },
+      data: { status: ReservationStatus.CANCELLED },
       include: { room: true },
     });
 
