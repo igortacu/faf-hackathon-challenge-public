@@ -2,24 +2,24 @@ import { Router } from "express";
 import { v4 as uuid } from "uuid";
 import { requireAdmin } from "../adminAuth.js";
 import { broadcast } from "../eventBus.js";
+import { AdminAnnouncementSchema } from "../schemas.js";
 import { ChannelId, EventType } from "../types.js";
+import { parseBody } from "../validate.js";
 
 const router = Router();
 
 router.post("/announcement", requireAdmin, (req, res) => {
-  const { message, sender } = req.body;
+  const body = parseBody(AdminAnnouncementSchema, req, res);
+  if (!body) return;
 
-  if (!message || typeof message !== "string") {
-    res.status(400).json({ error: "message is required" });
-    return;
-  }
+  const { message, sender } = body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.ResortWide,
     event_type: EventType.ADMIN_ANNOUNCEMENT,
     message,
-    sender: typeof sender === "string" && sender ? sender : "Admin",
+    sender: sender ?? "Admin",
   });
 
   res.json({

@@ -1,12 +1,17 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
 import { broadcast } from "../eventBus.js";
+import { CrabOrderSchema, CrabSoldOutSchema } from "../schemas.js";
 import { ChannelId, EventType } from "../types.js";
+import { parseBody } from "../validate.js";
 
 const router = Router();
 
 router.post("/order", (req, res) => {
-  const { message, guest_id, guest_name, ...data } = req.body;
+  const body = parseBody(CrabOrderSchema, req, res);
+  if (!body) return;
+
+  const { message, guest_id, guest_name, ...data } = body;
 
   broadcast({
     id: uuid(),
@@ -23,7 +28,10 @@ router.post("/order", (req, res) => {
 });
 
 router.post("/sold-out", (req, res) => {
-  const { message, guest_id, guest_name, ...data } = req.body;
+  const body = parseBody(CrabSoldOutSchema, req, res);
+  if (!body) return;
+
+  const { message, guest_id, guest_name, ...data } = body;
 
   broadcast({
     id: uuid(),
