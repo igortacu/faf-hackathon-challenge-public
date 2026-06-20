@@ -15,6 +15,7 @@ type Config struct {
 	HotelServiceURL     string
 	BeachServiceURL     string
 	CrabServiceURL      string
+	GoatFarmServiceURL  string
 	BroadcastServiceURL string
 	ParrotServiceURL    string
 
@@ -24,6 +25,7 @@ type Config struct {
 	HotelServicePool     []string
 	BeachServicePool     []string
 	CrabServicePool      []string
+	GoatFarmServicePool  []string
 	BroadcastServicePool []string
 	ParrotServicePool    []string
 
@@ -42,6 +44,7 @@ func LoadConfig() Config {
 	hotel := splitEnv("HOTEL_SERVICE_URL", "http://localhost:3000")
 	beach := splitEnv("BEACH_SERVICE_URL", "")
 	crab := splitEnv("CRAB_SERVICE_URL", "")
+	goatFarm := splitEnv("GOAT_FARM_SERVICE_URL", "")
 	broadcast := splitEnv("BROADCAST_SERVICE_URL", "")
 	parrot := splitEnv("PARROT_SERVICE_URL", "")
 
@@ -52,6 +55,7 @@ func LoadConfig() Config {
 		HotelServiceURL:     firstURL(hotel),
 		BeachServiceURL:     firstURL(beach),
 		CrabServiceURL:      firstURL(crab),
+		GoatFarmServiceURL:  firstURL(goatFarm),
 		BroadcastServiceURL: firstURL(broadcast),
 		ParrotServiceURL:    firstURL(parrot),
 
@@ -59,6 +63,7 @@ func LoadConfig() Config {
 		HotelServicePool:     hotel,
 		BeachServicePool:     beach,
 		CrabServicePool:      crab,
+		GoatFarmServicePool:  goatFarm,
 		BroadcastServicePool: broadcast,
 		ParrotServicePool:    parrot,
 

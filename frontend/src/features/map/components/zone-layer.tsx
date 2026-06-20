@@ -6,6 +6,7 @@ import {
 } from "@/features/map/constants";
 import { ZoneIndicator } from "@/features/map/components/zone-indicator";
 import { getZone } from "@/features/map/zone-registry";
+import { GoatFarmMarker } from "@/features/goat-farm/components/goat-farm-marker";
 
 interface ZoneLayerProps {
   mapW: number;
@@ -37,6 +38,7 @@ export function ZoneLayer({ mapW, mapH, onZoneClick }: ZoneLayerProps) {
           />
         );
       })}
+      <GoatFarmMarker mapW={mapW} mapH={mapH} />
     </div>
   );
 }

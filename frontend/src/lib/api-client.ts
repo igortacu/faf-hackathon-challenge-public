@@ -80,6 +80,7 @@ export const api = {
   airport: createJsonApi("/api/airport"),
   beach: createJsonApi("/api/beach"),
   crab: createJsonApi("/api/crab"),
+  goatFarm: createJsonApi("/api/goat-farm"),
   hotel: createJsonApi("/api/hotel"),
   parrot: createJsonApi("/api/parrot"),
   broadcast: createJsonApi("/api/broadcast"),

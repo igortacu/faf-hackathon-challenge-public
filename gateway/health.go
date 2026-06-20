@@ -19,6 +19,7 @@ func HealthHandler(cfg Config) http.HandlerFunc {
 		"hotel":     cfg.HotelServiceURL,
 		"beach":     cfg.BeachServiceURL,
 		"crab":      cfg.CrabServiceURL,
+		"goat-farm": cfg.GoatFarmServiceURL,
 		"broadcast": cfg.BroadcastServiceURL,
 		"parrot":    cfg.ParrotServiceURL,
 	}
