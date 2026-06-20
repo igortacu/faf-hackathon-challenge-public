@@ -2,7 +2,6 @@
 import json
 
 from llm import FALLBACK
-from profanity import contains_mask
 
 _ERROR_KEY = "error"
 
@@ -55,7 +54,7 @@ def summarize_conversation(messages: list[dict]) -> dict:
         role = m.get("role")
         if role == "user":
             turns += 1
-            if contains_mask(m.get("content")):
+            if m.get("censored"):
                 censored_count += 1
         elif role == "assistant":
             calls = m.get("tool_calls")
