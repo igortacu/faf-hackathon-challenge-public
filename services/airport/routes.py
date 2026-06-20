@@ -63,8 +63,42 @@ def register_routes(app):
         if passport_type:
             query = query.filter_by(passport_type=passport_type)
 
-        arrivals = query.order_by(Arrival.queued_at.desc()).all()
-        return jsonify({"arrivals": arrivals_schema.dump(arrivals)}), 200
+        total = query.count()
+
+        limit_param = request.args.get("limit")
+        cursor_param = request.args.get("cursor")
+
+        if cursor_param is not None:
+            try:
+                cursor_id = int(cursor_param)
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid cursor"}), 400
+            query = query.filter(Arrival.id < cursor_id)
+
+        query = query.order_by(Arrival.id.desc())
+
+        if limit_param is not None:
+            try:
+                limit = int(limit_param)
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid limit"}), 400
+            if limit < 0:
+                return jsonify({"error": "Limit must be non-negative"}), 400
+            arrivals = query.limit(limit + 1).all()
+            if len(arrivals) > limit:
+                arrivals = arrivals[:limit]
+                next_cursor = arrivals[-1].id
+            else:
+                next_cursor = None
+        else:
+            arrivals = query.all()
+            next_cursor = None
+
+        return jsonify({
+            "arrivals": arrivals_schema.dump(arrivals),
+            "next_cursor": next_cursor,
+            "total": total,
+        }), 200
 
     @app.route("/queue", methods=["GET"])
     def get_queue():
