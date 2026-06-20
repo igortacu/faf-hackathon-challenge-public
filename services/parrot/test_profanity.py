@@ -1,5 +1,9 @@
 """Tests for the profanity filter.
 
+Covers both halves of the filter contract: innocent words (and swear words that
+merely appear as substrings of them) are left fully intact, while real swears —
+including obvious letter-swap / leetspeak variants — are masked.
+
 Run from services/parrot with: python -m unittest test_profanity
 (No extra dependencies — uses the stdlib unittest runner.)
 """

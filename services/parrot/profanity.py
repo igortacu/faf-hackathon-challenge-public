@@ -2,8 +2,9 @@ import re
 
 from config import settings
 
-# Character used to mask a profane word, preserving its length. Single source of
-# truth so store-derived metrics (admin.py) can detect a masked message.
+# Character used to mask a profane word, preserving its original length. This is
+# the single source of truth for the mask glyph, so store-derived metrics
+# (see admin.py) can reliably detect whether a message was masked.
 MASK_CHAR = "*"
 
 # Stop list sourced from PROFANITY_WORDS (config.py), comma-separated, falling back
@@ -42,7 +43,11 @@ _TOKEN_RE = re.compile(rf"(?=[A-Za-z{_LEET_CHARS}]*[A-Za-z])[A-Za-z{_LEET_CHARS}
 
 
 def _normalise(token: str) -> str:
-    """Fold a token to its comparison form: lowercase, with leetspeak undone."""
+    """Fold a token to its comparison form: lowercased, with leetspeak undone.
+
+    Only a throwaway copy is normalised for the stop-list check; the caller's
+    original text is never altered by this function.
+    """
     return "".join(_LEET_MAP.get(ch, ch) for ch in token.lower())
 
 
@@ -88,7 +93,7 @@ def mask_profanity(text: str) -> tuple[str, bool]:
 
 
 def contains_mask(text) -> bool:
-    """True if text carries a profanity mask produced by mask_profanity."""
+    """Return True if the text carries a profanity mask produced by mask_profanity."""
     return bool(text) and MASK_CHAR in text
 
 
