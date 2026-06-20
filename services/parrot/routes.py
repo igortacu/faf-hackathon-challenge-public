@@ -1,6 +1,8 @@
 import logging
-from fastapi import APIRouter, HTTPException, Request
+import secrets
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from config import settings
 from schemas import (
     ChatRequest,
     ChatResponse,
@@ -17,6 +19,17 @@ import admin
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def require_admin(x_admin_passcode: str | None = Header(default=None)) -> None:
+    """Guards admin endpoints. Fails open only when ADMIN_PASSCODE is unset, so a
+    configured deployment requires a matching X-Admin-Passcode header while an
+    unconfigured one stays open."""
+    configured = settings.admin_passcode
+    if not configured:
+        return
+    if not x_admin_passcode or not secrets.compare_digest(x_admin_passcode, configured):
+        raise HTTPException(status_code=401, detail="Admin authentication required")
 
 
 @router.get("/health")
@@ -70,20 +83,20 @@ async def get_history(guest_id: str, request: Request):
     return HistoryResponse(guest_id=guest_id, messages=store.get_visible(guest_id))
 
 
-@router.get("/admin/metrics", response_model=MetricsResponse)
+@router.get("/admin/metrics", response_model=MetricsResponse, dependencies=[Depends(require_admin)])
 async def admin_metrics(request: Request):
     store: ConversationStore = request.app.state.store
     return MetricsResponse(**admin.build_metrics(store))
 
 
-@router.get("/admin/conversations", response_model=ConversationListResponse)
+@router.get("/admin/conversations", response_model=ConversationListResponse, dependencies=[Depends(require_admin)])
 async def admin_conversations(request: Request):
     store: ConversationStore = request.app.state.store
     rows = admin.list_conversations(store)
     return ConversationListResponse(count=len(rows), conversations=rows)
 
 
-@router.get("/admin/conversations/{guest_id}", response_model=ConversationDetailResponse)
+@router.get("/admin/conversations/{guest_id}", response_model=ConversationDetailResponse, dependencies=[Depends(require_admin)])
 async def admin_conversation_detail(guest_id: str, request: Request):
     store: ConversationStore = request.app.state.store
     peeked = store.peek(guest_id)

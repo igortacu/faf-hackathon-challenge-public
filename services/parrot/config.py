@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     hotel_service_url: str = "http://localhost:3000"
     internal_secret: str = ""
 
+    # Admin endpoints require this passcode via the X-Admin-Passcode header.
+    # Empty (unset) leaves admin endpoints open — set it to lock them down.
+    admin_passcode: str = ""
+
     context_dir: str = "context"
 
     max_history_messages: int = 20
