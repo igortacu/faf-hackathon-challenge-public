@@ -28,7 +28,7 @@ services:
 
   broadcast:
     build: ./services/broadcast
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "3002"
       CORS_ORIGIN: "*"
@@ -41,7 +41,7 @@ services:
 
   airport:
     build: ./services/airport
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "3001"
       DATABASE_PATH: /data/airport.db
@@ -60,7 +60,7 @@ services:
 
   hotel:
     build: ./services/hotel
-    env_file: .env.example
+    env_file: .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hotel
       AIRPORT_SERVICE_URL: http://airport:3001
@@ -79,7 +79,7 @@ services:
 
   beach:
     build: ./services/beach
-    env_file: .env.example
+    env_file: .env
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -103,7 +103,7 @@ services:
 
   parrot:
     build: ./services/parrot
-    env_file: .env.example
+    env_file: .env
     environment:
       port: "3003"
       airport_service_url: http://airport:3001
@@ -122,7 +122,7 @@ services:
 
   parrot-b:
     build: ./services/parrot
-    env_file: .env.example
+    env_file: .env
     environment:
       port: "3003"
       airport_service_url: http://airport:3001
@@ -141,7 +141,7 @@ services:
 
   gateway:
     build: ./gateway
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "8000"
       AIRPORT_SERVICE_URL: http://airport:3001
