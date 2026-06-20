@@ -49,21 +49,23 @@ func (rl *RateLimiter) allow(key string) bool {
 	per := time.Duration(rl.perNs.Load())
 
 	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
 	w := rl.clients[key]
 	now := time.Now()
 	if w == nil || now.After(w.reset) {
 		w = &window{count: 0, reset: now.Add(per)}
 		rl.clients[key] = w
 	}
-	cur := w.count
-	rl.mu.Unlock()
 
-	if cur >= limit {
+	// Check-and-increment must happen atomically under the same lock. Releasing
+	// between the read and the increment let concurrent goroutines observe the
+	// same count and all pass the limit check (TOCTOU), admitting bursts above
+	// the configured limit.
+	if w.count >= limit {
 		return false
 	}
-	rl.mu.Lock()
 	w.count++
-	rl.mu.Unlock()
 	return true
 }
 
