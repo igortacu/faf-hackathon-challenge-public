@@ -6,16 +6,12 @@ import { EventType } from "../types.js";
 const router = Router();
 
 router.post("/full", (req, res) => {
-  const { body } = req.body;
-
   broadcast({
     id: uuid(),
     type: EventType.BEACH_FULL,
     timestamp: new Date().toISOString(),
     source: "beach",
-    payload: {
-      body
-    },
+    payload: req.body,
   });
 
   res.json({
@@ -24,16 +20,12 @@ router.post("/full", (req, res) => {
 });
 
 router.post("/available", (req, res) => {
-  const { body } = req.body;
-
   broadcast({
     id: uuid(),
-    type: EventType.BEACH_FULL,
+    type: EventType.BEACH_AVAILABLE,
     timestamp: new Date().toISOString(),
     source: "beach",
-    payload: {
-      body
-    },
+    payload: req.body,
   });
 
   res.json({
