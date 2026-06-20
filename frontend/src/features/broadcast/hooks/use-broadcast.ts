@@ -75,7 +75,15 @@ export function useBroadcast() {
 
     connect();
 
-    // EventSource is closed automatically on unmount
+    return () => {
+      activeRef.current = false;
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      connectionRef.current?.close();
+      connectionRef.current = null;
+    };
   }, []);
 
   return { status };
