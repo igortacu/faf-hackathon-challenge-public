@@ -26,5 +26,8 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
+# vite preview reads preview.allowedHosts from the config at runtime; without it,
+# the preview server rejects external hosts (public domain / tunnel) with 403.
+COPY --from=builder /app/vite.config.ts ./
 EXPOSE 5173
 CMD ["pnpm", "preview", "--host", "0.0.0.0", "--port", "5173"]

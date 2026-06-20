@@ -108,6 +108,40 @@ class PostgresActivityRepository : ActivityRepository {
         }
     }
 
+    override fun create(activity: Activity): Boolean {
+
+        return transaction {
+
+            val exists =
+                ActivityTable.select {
+                    ActivityTable.id eq activity.id
+                }.count() > 0
+
+            if (exists) {
+                false
+            } else {
+                ActivityTable.insert {
+
+                    it[id] = activity.id
+                    it[name] = activity.name
+                    it[description] = activity.description
+                    it[capacity] = activity.capacity
+                }
+                true
+            }
+        }
+    }
+
+    override fun delete(id: String): Boolean {
+
+        return transaction {
+            val deletedRows = ActivityTable.deleteWhere {
+                SqlExpressionBuilder.run { ActivityTable.id eq id }
+            }
+            deletedRows > 0
+        }
+    }
+}
     private fun toActivity(row: ResultRow): Activity {
 
         val activityId = row[ActivityTable.id]
