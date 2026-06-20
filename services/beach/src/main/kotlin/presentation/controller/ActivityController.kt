@@ -222,7 +222,7 @@ class ActivityController(
                 call.respond(HttpStatusCode.NotFound, ErrorResponse(ActivityErrors.ACTIVITY_NOT_FOUND))
         }
     }
-}
+
     // Maps a use-case error constant to the appropriate HTTP status code.
     private fun statusFor(error: String): HttpStatusCode = when (error) {
         ActivityErrors.ACTIVITY_NOT_FOUND,

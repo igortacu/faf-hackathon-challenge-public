@@ -14,6 +14,9 @@ object ActivityErrors {
     const val ACTIVITY_NOT_BOOKED =
         "Activity not booked"
 
+    const val VISITOR_ALREADY_IN_ACTIVITY =
+        "Visitor is already in this activity"
+
     const val MISSING_ACTIVITY_ID =
         "Missing activity id"
 

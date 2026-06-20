@@ -141,7 +141,7 @@ class PostgresActivityRepository : ActivityRepository {
             deletedRows > 0
         }
     }
-}
+
     private fun toActivity(row: ResultRow): Activity {
 
         val activityId = row[ActivityTable.id]
