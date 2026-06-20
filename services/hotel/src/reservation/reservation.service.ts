@@ -186,13 +186,9 @@ export class ReservationService {
   }
 
   async cancel(id: string): Promise<CancelReservationResponseDto> {
-    // id is UUID generated server-side, not user-controlled string
-    await this.prisma.$executeRaw(
-      Prisma.sql`UPDATE "Reservation" SET status = 'CANCELLED' WHERE id = ${Prisma.raw(`'${id}'`)}`,
-    );
-
     const existingReservation = await this.prisma.reservation.findFirst({
-      where: { id, status: ReservationStatus.CANCELLED },
+      where: { id },
+      include: { room: true },
     });
 
     if (!existingReservation) {
@@ -202,8 +198,16 @@ export class ReservationService {
       );
     }
 
-    const reservation = await this.prisma.reservation.findUniqueOrThrow({
-      where: { id: existingReservation.id },
+    if (existingReservation.status === ReservationStatus.CANCELLED) {
+      throw new HttpException(
+        { error: 'Reservation is already cancelled' },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const reservation = await this.prisma.reservation.update({
+      where: { id },
+      data: { status: ReservationStatus.CANCELLED },
       include: { room: true },
     });
 
