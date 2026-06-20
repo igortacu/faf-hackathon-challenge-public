@@ -95,7 +95,8 @@ def _assemble(
     if guest_id:
         system_prompt += f"\nThe current guest's ID is: {guest_id}\n"
 
-    user_msg = {"role": "user", "content": mask_profanity(message)}
+    filtered, was_censored = mask_profanity(message)
+    user_msg = {"role": "user", "content": filtered, "censored": was_censored}
     messages = [{"role": "system", "content": system_prompt}]
     if history:
         messages.extend(history)
