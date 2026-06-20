@@ -5,6 +5,7 @@ import com.hackathon.summer.faf.application.usecase.BookActivityUseCase
 import com.hackathon.summer.faf.application.usecase.CancelActivityUseCase
 import com.hackathon.summer.faf.domain.repository.ActivityRepository
 import com.hackathon.summer.faf.presentation.request.VisitorRequest
+import com.hackathon.summer.faf.presentation.response.ActivityParticipantsResponse
 import com.hackathon.summer.faf.presentation.response.ActivityResponse
 import com.hackathon.summer.faf.presentation.response.ErrorResponse
 import io.ktor.http.HttpStatusCode
@@ -76,6 +77,30 @@ class ActivityController(
                 description = activity.description,
                 capacity = activity.capacity,
                 remaining = activity.remaining()
+            )
+        )
+    }
+
+    suspend fun getActivityParticipants(call: ApplicationCall) {
+
+        val activityId = call.parameters["activity_id"]
+
+        val participants = activityRepository.findParticipantsByActivityId(activityId!!)
+
+        if (participants == null) {
+            call.respond(
+                HttpStatusCode.NotFound,
+                ErrorResponse("Activity not found")
+            )
+            return
+        }
+
+        call.respond(
+            HttpStatusCode.OK,
+            ActivityParticipantsResponse(
+                activity_id = participants.activityId,
+                capacity = participants.capacity,
+                participants = participants.participants
             )
         )
     }

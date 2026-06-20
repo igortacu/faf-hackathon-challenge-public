@@ -1,9 +1,12 @@
 package com.hackathon.summer.faf.infrastructure.repository
 
 import com.hackathon.summer.faf.domain.model.Activity
+import com.hackathon.summer.faf.domain.repository.ActivityParticipants
 import com.hackathon.summer.faf.domain.repository.ActivityRepository
+import com.hackathon.summer.faf.infrastructure.database.table.ActivityBookingsTable
 import com.hackathon.summer.faf.infrastructure.database.table.ActivityTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class PostgresActivityRepository : ActivityRepository {
@@ -14,12 +17,7 @@ class PostgresActivityRepository : ActivityRepository {
 
             ActivityTable.selectAll().map {
 
-                Activity(
-                    id = it[ActivityTable.id],
-                    name = it[ActivityTable.name],
-                    description = it[ActivityTable.description],
-                    capacity = it[ActivityTable.capacity]
-                )
+                toActivity(it)
             }
         }
     }
@@ -32,11 +30,23 @@ class PostgresActivityRepository : ActivityRepository {
                 .select { ActivityTable.id eq id }
                 .map {
 
-                    Activity(
-                        id = it[ActivityTable.id],
-                        name = it[ActivityTable.name],
-                        description = it[ActivityTable.description],
-                        capacity = it[ActivityTable.capacity]
+                    toActivity(it)
+                }
+                .singleOrNull()
+        }
+    }
+
+    override fun findParticipantsByActivityId(id: String): ActivityParticipants? {
+
+        return transaction {
+
+            ActivityTable
+                .select { ActivityTable.id eq id }
+                .map {
+                    ActivityParticipants(
+                        activityId = it[ActivityTable.id],
+                        capacity = it[ActivityTable.capacity],
+                        participants = findBookedVisitors(it[ActivityTable.id])
                     )
                 }
                 .singleOrNull()
@@ -73,6 +83,38 @@ class PostgresActivityRepository : ActivityRepository {
                     it[capacity] = activity.capacity
                 }
             }
+
+            ActivityBookingsTable.deleteWhere {
+                ActivityBookingsTable.activityId eq activity.id
+            }
+
+            activity.bookedVisitors.forEach { visitorId ->
+                ActivityBookingsTable.insert {
+                    it[activityId] = activity.id
+                    it[ActivityBookingsTable.visitorId] = visitorId
+                }
+            }
         }
+    }
+
+    private fun toActivity(row: ResultRow): Activity {
+
+        val activityId = row[ActivityTable.id]
+
+        return Activity(
+            id = activityId,
+            name = row[ActivityTable.name],
+            description = row[ActivityTable.description],
+            capacity = row[ActivityTable.capacity],
+            bookedVisitors = findBookedVisitors(activityId).toMutableSet()
+        )
+    }
+
+    private fun findBookedVisitors(activityId: String): List<String> {
+
+        return ActivityBookingsTable
+            .select { ActivityBookingsTable.activityId eq activityId }
+            .map { it[ActivityBookingsTable.visitorId] }
+            .sorted()
     }
 }
