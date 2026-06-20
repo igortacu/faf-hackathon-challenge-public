@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Prisma, ReservationStatus } from '../../generated/prisma/client.js';
+import { ReservationStatus } from '../../generated/prisma/client.js';
 import { AirportService } from '../airport/airport.service';
 import { BroadcastService } from '../broadcast/broadcast.service';
 import { HotelBroadcastEventType } from '../broadcast/hotel-events';
@@ -38,8 +38,16 @@ export class ReservationService {
       orderBy: { id: 'asc' },
     });
 
+    // When a party is specified use its size for capacity checks; fall back to
+    // guest_count so existing callers that omit party_guest_ids keep working.
+    const partySize =
+      createReservationDto.party_guest_ids &&
+      createReservationDto.party_guest_ids.length > 0
+        ? createReservationDto.party_guest_ids.length
+        : createReservationDto.guest_count;
+
     const maxCapacity = Math.max(...rooms.map((room) => room.capacity));
-    if (createReservationDto.guest_count > maxCapacity) {
+    if (partySize > maxCapacity) {
       throw new HttpException(
         {
           error: `Room type ${createReservationDto.room_type} supports at most ${maxCapacity} guests`,
@@ -51,7 +59,7 @@ export class ReservationService {
     let availableRoom: (typeof rooms)[number] | null = null;
 
     for (const room of rooms) {
-      if (createReservationDto.guest_count > room.capacity) {
+      if (partySize > room.capacity) {
         continue;
       }
 
@@ -79,6 +87,8 @@ export class ReservationService {
       );
     }
 
+    const party = createReservationDto.party_guest_ids ?? [];
+
     const reservation = await this.prisma.reservation.create({
       data: {
         guest_id: createReservationDto.guest_id,
@@ -87,7 +97,11 @@ export class ReservationService {
         check_in_day: createReservationDto.check_in_day,
         check_out_day: createReservationDto.check_out_day,
         status: ReservationStatus.CONFIRMED,
+        guests: {
+          create: party.map((guestId) => ({ guest_id: guestId })),
+        },
       },
+      include: { guests: true },
     });
 
     await this.broadcast.publishHotelEvent(
@@ -109,6 +123,7 @@ export class ReservationService {
       room_id: reservation.room_id,
       room_type: availableRoom.type,
       guest_count: reservation.guest_count,
+      party_guest_ids: reservation.guests.map((g) => g.guest_id),
       check_in_day: reservation.check_in_day,
       check_out_day: reservation.check_out_day,
       status: reservation.status,
@@ -129,11 +144,10 @@ export class ReservationService {
     }
   }
 
-  // see findActiveByGuestId for the optimized query path
   async findById(id: string): Promise<ReservationResponseDto> {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id },
-      include: { room: true },
+      include: { room: true, guests: true },
     });
 
     if (!reservation) {
@@ -149,6 +163,7 @@ export class ReservationService {
       room_id: reservation.room_id,
       room_type: reservation.room.type,
       guest_count: reservation.guest_count,
+      party_guest_ids: reservation.guests.map((g) => g.guest_id),
       check_in_day: reservation.check_in_day,
       check_out_day: reservation.check_out_day,
       status: reservation.status,
@@ -156,36 +171,32 @@ export class ReservationService {
   }
 
   async findActiveByGuestId(guestId: string): Promise<ReservationResponseDto> {
-    const rows = await this.prisma.$queryRaw<any[]>(
-      Prisma.sql`
-        SELECT r.id, r.guest_id, r.room_id, r.guest_count, r.check_in_day, r.check_out_day, r.status,
-               rm.type AS room_type
-        FROM "Reservation" r
-        JOIN "Room" rm ON rm.id = r.room_id
-        WHERE r.guest_id = ${guestId}
-          AND r.status = 'CONFIRMED'
-        ORDER BY r.check_in_day DESC
-        LIMIT 1
-      `,
-    );
+    const reservation = await this.prisma.reservation.findFirst({
+      where: {
+        guest_id: guestId,
+        status: ReservationStatus.CONFIRMED,
+      },
+      orderBy: { check_in_day: 'desc' },
+      include: { room: true, guests: true },
+    });
 
-    if (!rows.length) {
+    if (!reservation) {
       throw new HttpException(
         { error: 'Reservation not found' },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    const row = rows[0];
     return {
-      id: row.id,
-      guest_id: row.guest_id,
-      room_id: row.room_id,
-      room_type: row.room_type,
-      guest_count: row.guest_count,
-      check_in_day: row.check_in_day,
-      check_out_day: row.check_out_day,
-      status: row.status,
+      id: reservation.id,
+      guest_id: reservation.guest_id,
+      room_id: reservation.room_id,
+      room_type: reservation.room.type,
+      guest_count: reservation.guest_count,
+      party_guest_ids: reservation.guests.map((g) => g.guest_id),
+      check_in_day: reservation.check_in_day,
+      check_out_day: reservation.check_out_day,
+      status: reservation.status,
     };
   }
 
