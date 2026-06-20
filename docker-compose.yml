@@ -19,7 +19,7 @@ services:
 
   broadcast:
     build: ./services/broadcast
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "3002"
       CORS_ORIGIN: "*"
@@ -33,7 +33,7 @@ services:
 
   airport:
     build: ./services/airport
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "3001"
       DATABASE_PATH: /data/airport.db
@@ -48,7 +48,7 @@ services:
 
   hotel:
     build: ./services/hotel
-    env_file: .env.example
+    env_file: .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hotel
       AIRPORT_SERVICE_URL: http://airport:3001
@@ -63,7 +63,7 @@ services:
 
   beach:
     build: ./services/beach
-    env_file: .env.example
+    env_file: .env
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -83,7 +83,7 @@ services:
 
   parrot:
     build: ./services/parrot
-    env_file: .env.example
+    env_file: .env
     environment:
       port: "3003"
       airport_service_url: http://airport:3001
@@ -96,16 +96,29 @@ services:
       hotel:
         condition: service_started
 
+  parrot-b:
+    build: ./services/parrot
+    env_file: .env
+    environment:
+      port: "3003"
+      airport_service_url: http://airport:3001
+      hotel_service_url: http://hotel:3000
+    depends_on:
+      airport:
+        condition: service_started
+      hotel:
+        condition: service_started
+
   gateway:
     build: ./gateway
-    env_file: .env.example
+    env_file: .env
     environment:
       PORT: "8000"
       AIRPORT_SERVICE_URL: http://airport:3001
       HOTEL_SERVICE_URL: http://hotel:3000
       BEACH_SERVICE_URL: http://beach:8080
       BROADCAST_SERVICE_URL: http://broadcast:3002
-      PARROT_SERVICE_URL: http://parrot:3003
+      PARROT_SERVICE_URL: http://parrot:3003,http://parrot-b:3003
       CORS_ALLOWED_ORIGINS: "*"
     ports:
       - "8000:8000"
@@ -120,18 +133,20 @@ services:
         condition: service_started
       parrot:
         condition: service_started
+      parrot-b:
+        condition: service_started
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_GATEWAY_URL: http://localhost:8000
-        VITE_MOCK: "false"
-        VITE_ADMIN_PASSCODE: ""
-        VITE_TRAFFIC_GENERATOR: "off"
-        VITE_PARROT_CHAT_COOLDOWN_MS: "30000"
-        VITE_SIMULATION_START_TIME: "2026-06-20T00:00:00Z"
-        VITE_GAME_SPEED: "300"
+        VITE_GATEWAY_URL: ${VITE_GATEWAY_URL:-http://localhost:8000}
+        VITE_MOCK: ${VITE_MOCK:-false}
+        VITE_ADMIN_PASSCODE: ${VITE_ADMIN_PASSCODE:-}
+        VITE_TRAFFIC_GENERATOR: ${VITE_TRAFFIC_GENERATOR:-off}
+        VITE_PARROT_CHAT_COOLDOWN_MS: ${VITE_PARROT_CHAT_COOLDOWN_MS:-30000}
+        VITE_SIMULATION_START_TIME: ${VITE_SIMULATION_START_TIME:-2026-06-20T00:00:00Z}
+        VITE_GAME_SPEED: ${VITE_GAME_SPEED:-300}
     ports:
       - "5173:5173"
     depends_on:

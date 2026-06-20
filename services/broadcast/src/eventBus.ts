@@ -4,7 +4,11 @@ import { IslandEvent } from "./types.js";
 const clients: Response[] = [];
 
 export function addClient(res: Response) {
-  //TODO: Add client
+  // Flush SSE headers immediately so the browser EventSource fires `onopen`,
+  // then register the connection to receive broadcast events.
+  res.flushHeaders();
+  res.write(": connected\n\n");
+  clients.push(res);
 }
 
 export function removeClient(res: Response) {
