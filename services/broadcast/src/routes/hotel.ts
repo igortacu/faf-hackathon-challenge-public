@@ -8,16 +8,17 @@ const router = Router();
 
 // Hotel publishes: { type, payload: { message, reservation_id, guest_id, ... } }
 router.post("/confirm", (req, res) => {
-  const { payload } = req.body ?? {};
+  const { message, guest_id, guest_name, ...data } = req.body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.Hotel,
     event_type: EventType.HOTEL_CONFIRM,
-    message: payload?.message ?? "",
+    message: message ?? "A reservation was confirmed.",
     sender: "hotel",
-    guest_id: payload?.guest_id,
-    data: payload,
+    guest_id,
+    guest_name,
+    data,
   });
 
   res.json({
@@ -26,16 +27,17 @@ router.post("/confirm", (req, res) => {
 });
 
 router.post("/cancel", (req, res) => {
-  const { payload } = req.body ?? {};
+  const { message, guest_id, guest_name, ...data } = req.body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.Hotel,
     event_type: EventType.HOTEL_CANCEL,
-    message: payload?.message ?? "",
+    message: message ?? "A reservation was cancelled.",
     sender: "hotel",
-    guest_id: payload?.guest_id,
-    data: payload,
+    guest_id,
+    guest_name,
+    data,
   });
 
   res.json({

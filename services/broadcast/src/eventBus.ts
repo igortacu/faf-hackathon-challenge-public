@@ -20,9 +20,9 @@ export function removeClient(res: Response) {
 }
 
 export function broadcast(event: IslandEvent) {
-  // Emit a default (unnamed) `message` frame. A named `event:` line would only
-  // reach listeners that call addEventListener(<type>); the consumers use
-  // EventSource.onmessage, which fires solely for unnamed frames.
+  // No `event:` line — a named SSE event only fires addEventListener(name, ...)
+  // handlers, never the browser's default EventSource.onmessage, which is what
+  // every consumer here actually uses.
   clients.forEach((client) => {
     client.write(`data: ${JSON.stringify(event)}\n\n`);
   });

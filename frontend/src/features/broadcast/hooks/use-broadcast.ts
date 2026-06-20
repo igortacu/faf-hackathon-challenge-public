@@ -128,13 +128,14 @@ export function useBroadcast() {
 
     return () => {
       activeRef.current = false;
-      if (timerRef.current) {
+      if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       connectionRef.current?.close();
       connectionRef.current = null;
     };
-  }, [queryClient]);
+  }, []);
 
   return { status };
 }

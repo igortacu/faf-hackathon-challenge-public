@@ -11,11 +11,10 @@ router.post("/", (req, res) => {
 
   broadcast({
     id: uuid(),
-    channel: ChannelId.ResortWide,
+    channel: ChannelId.Broadcast,
     event_type: EventType.PUBLIC_ANNOUNCEMENT,
-    message: message ?? "",
-    sender: guestName ?? "guest",
-    guest_name: guestName,
+    message,
+    sender: guestName,
   });
 
   res.json({

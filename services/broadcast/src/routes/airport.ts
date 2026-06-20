@@ -7,20 +7,16 @@ const router = Router();
 
 // Airport publishes: { channel, message, sender, data: { guest_id, name, surname, ... } }
 router.post("/arrival", (req, res) => {
-  const { message, sender, data } = req.body ?? {};
-
-  const guestName = data
-    ? `${data.name ?? ""} ${data.surname ?? ""}`.trim() || undefined
-    : undefined;
+  const { message, guest_id, guest_name, ...data } = req.body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.Airport,
     event_type: EventType.AIRPORT_ARRIVAL,
-    message: message ?? "",
-    sender: sender ?? "airport",
-    guest_id: data?.guest_id,
-    guest_name: guestName,
+    message: message ?? "A guest arrived at the airport.",
+    sender: "airport",
+    guest_id,
+    guest_name,
     data,
   });
 

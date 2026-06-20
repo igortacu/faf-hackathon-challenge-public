@@ -18,15 +18,16 @@ function normalize(req: { body?: any }) {
 }
 
 router.post("/full", (req, res) => {
-  const { message, sender, guest_id, data } = normalize(req);
+  const { message, guest_id, guest_name, ...data } = req.body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.Beach,
     event_type: EventType.BEACH_FULL,
-    message,
-    sender,
+    message: message ?? "A beach activity reached capacity.",
+    sender: "beach",
     guest_id,
+    guest_name,
     data,
   });
 
@@ -36,15 +37,16 @@ router.post("/full", (req, res) => {
 });
 
 router.post("/available", (req, res) => {
-  const { message, sender, guest_id, data } = normalize(req);
+  const { message, guest_id, guest_name, ...data } = req.body;
 
   broadcast({
     id: uuid(),
     channel: ChannelId.Beach,
-    event_type: EventType.BEACH_AVAILABLE,
-    message,
-    sender,
+    event_type: EventType.BEACH_FULL,
+    message: message ?? "A beach activity has availability.",
+    sender: "beach",
     guest_id,
+    guest_name,
     data,
   });
 

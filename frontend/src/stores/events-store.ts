@@ -4,6 +4,8 @@ import { ChannelId } from "@/types/broadcast";
 import type { BroadcastEvent } from "@/types/broadcast";
 
 const MAX_EVENTS = 100;
+const ADMIN_ANNOUNCEMENT_EVENT_TYPE = "admin.announcement";
+const ALL_CHANNELS = Object.values(ChannelId);
 
 interface IngestEventOptions {
   mirrorToResortWide?: boolean;
@@ -54,6 +56,26 @@ export const useEventsStore = create<EventsState>()((set) => ({
 
   ingestEvent: (event, options) =>
     set((state) => {
+      // Resort-wide admin announcements are delivered as a single SSE event
+      // but must appear in every zone's own feed, not just the Lighthouse/
+      // resort-wide one — fan it out to every channel bucket instead of just
+      // its own channel (+ optional mirror).
+      if (event.event_type === ADMIN_ANNOUNCEMENT_EVENT_TYPE) {
+        const nextEvents = { ...state.events };
+        const nextActivityTick = { ...state.activityTick };
+
+        for (const channel of ALL_CHANNELS) {
+          nextEvents[channel] = prependEvent(state.events[channel], {
+            ...event,
+            id: crypto.randomUUID(),
+            channel,
+          });
+          nextActivityTick[channel] = state.activityTick[channel] + 1;
+        }
+
+        return { events: nextEvents, activityTick: nextActivityTick };
+      }
+
       const nextEvents = {
         ...state.events,
         [event.channel]: prependEvent(state.events[event.channel], event),

@@ -78,4 +78,4 @@ npm-debug.log
 .git
 .vscode
 BUG_REPORT.md
-.claude
+.claude/

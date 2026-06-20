@@ -32,6 +32,7 @@ services:
     environment:
       PORT: "3002"
       CORS_ORIGIN: "*"
+      ADMIN_PASSCODE: ${VITE_ADMIN_PASSCODE:-}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 0"]
       interval: 5s

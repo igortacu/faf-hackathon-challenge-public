@@ -1,3 +1,12 @@
+export enum ChannelId {
+  Airport = "airport",
+  Hotel = "hotel",
+  Beach = "beach",
+  Parrot = "parrot",
+  Broadcast = "broadcast",
+  ResortWide = "resort-wide",
+}
+
 export enum EventType {
   AIRPORT_ARRIVAL = "airport.arrival",
 
@@ -8,6 +17,8 @@ export enum EventType {
   BEACH_AVAILABLE = "beach.activity_available",
 
   PUBLIC_ANNOUNCEMENT = "public.announcement",
+
+  ADMIN_ANNOUNCEMENT = "admin.announcement",
 }
 
 // Channels mirror the consumer contract (frontend ChannelId). Events are
