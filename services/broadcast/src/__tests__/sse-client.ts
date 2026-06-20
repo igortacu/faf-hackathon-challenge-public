@@ -21,12 +21,20 @@ export class SseClient {
   private buffer = "";
   private waiters: Array<() => void> = [];
 
-  static connect(port: number, path = "/events"): Promise<SseClient> {
+  static connect(
+    port: number,
+    options: { path?: string; headers?: Record<string, string> } = {}
+  ): Promise<SseClient> {
+    const { path = "/events", headers = {} } = options;
     const client = new SseClient();
     return new Promise((resolve, reject) => {
       const req = http.get(
-        { host: "127.0.0.1", port, path, headers: { Accept: "text/event-stream" } },
+        { host: "127.0.0.1", port, path, headers: { Accept: "text/event-stream", ...headers } },
         (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`SSE connect failed: ${res.statusCode}`));
+            return;
+          }
           res.setEncoding("utf8");
           res.on("data", (chunk: string) => client.ingest(chunk));
           resolve(client);

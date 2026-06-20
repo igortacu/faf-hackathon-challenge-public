@@ -41,6 +41,10 @@ const sampleEvent: IslandEvent = {
   data: { gate: "EU-1" },
 };
 
+// Full read access — used by tests that exercise generic delivery, not the
+// channel access-control rules themselves (see the dedicated tests below).
+const ALL_CHANNELS = new Set(Object.values(ChannelId));
+
 describe("eventBus", () => {
   const registered: Response[] = [];
 
@@ -56,7 +60,7 @@ describe("eventBus", () => {
 
   it("flushes headers and primes the stream on connect", () => {
     const c = fakeClient();
-    addClient(track(c.res));
+    addClient(track(c.res), ALL_CHANNELS);
 
     assert.equal(c.flushed, true, "headers must flush so EventSource fires onopen");
     assert.ok(c.text.includes(": connected"), "should prime the SSE stream");
@@ -64,7 +68,7 @@ describe("eventBus", () => {
 
   it("delivers a default (unnamed) message frame — regression for named events", () => {
     const c = fakeClient();
-    addClient(track(c.res));
+    addClient(track(c.res), ALL_CHANNELS);
     c.writes.length = 0; // drop the priming comment
 
     broadcast(sampleEvent);
@@ -78,7 +82,7 @@ describe("eventBus", () => {
 
   it("serializes the full consumer-contract payload in the data line", () => {
     const c = fakeClient();
-    addClient(track(c.res));
+    addClient(track(c.res), ALL_CHANNELS);
     c.writes.length = 0;
 
     broadcast(sampleEvent);
@@ -90,8 +94,8 @@ describe("eventBus", () => {
   it("fans out to every connected client", () => {
     const a = fakeClient();
     const b = fakeClient();
-    addClient(track(a.res));
-    addClient(track(b.res));
+    addClient(track(a.res), ALL_CHANNELS);
+    addClient(track(b.res), ALL_CHANNELS);
     a.writes.length = 0;
     b.writes.length = 0;
 
@@ -103,12 +107,24 @@ describe("eventBus", () => {
 
   it("stops delivering after a client is removed", () => {
     const c = fakeClient();
-    addClient(c.res); // not tracked: we remove it explicitly below
+    addClient(c.res, ALL_CHANNELS); // not tracked: we remove it explicitly below
     removeClient(c.res);
     c.writes.length = 0;
 
     broadcast(sampleEvent);
 
     assert.equal(c.text, "", "a removed client must receive nothing");
+  });
+
+  it("only delivers events on channels the client was granted at connect time", () => {
+    const c = fakeClient();
+    addClient(track(c.res), new Set([ChannelId.Hotel]));
+    c.writes.length = 0;
+
+    broadcast(sampleEvent); // channel: airport — not in this client's grant
+    assert.equal(c.text, "", "an airport event must not reach a hotel-only listener");
+
+    broadcast({ ...sampleEvent, channel: ChannelId.Hotel, event_type: EventType.HOTEL_CONFIRM });
+    assert.ok(c.text.includes(EventType.HOTEL_CONFIRM), "a granted channel's event must arrive");
   });
 });

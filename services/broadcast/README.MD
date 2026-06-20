@@ -63,12 +63,13 @@ CORS_ORIGIN=*
 GET /events
 ```
 
-Returns a continuous stream of island announcements.
+Returns a continuous stream of island announcements — **for the channels the
+caller is authorised to receive only** (see Access Control below).
 
 ### Example
 
 ```bash
-curl -N http://localhost:3000/events
+curl -N http://localhost:3000/events -H "X-Service-Token: fe-token"
 ```
 
 Example response:
@@ -78,6 +79,40 @@ Example response:
 event: public.announcement
 data: {id: uuid, event: EventType, timestamp: Date, source: String, payload: {}}
 ```
+
+---
+
+## Access Control
+
+`GET /events` requires the caller to identify itself with a per-service bearer
+token — one of the `*_TOKEN` values in the root `.env` (`FE_TOKEN`,
+`HOTEL_TOKEN`, `BEACH_TOKEN`, `AIRPORT_TOKEN`, `PARROT_TOKEN`). A missing or
+unrecognized token gets **no stream at all** (`401`) — there is no anonymous
+or default-access fallback.
+
+The token can be sent as:
+
+- `Authorization: Bearer <token>`
+- `X-Service-Token: <token>`
+- `?token=<token>` query parameter — for the frontend's browser `EventSource`,
+  which cannot set custom headers
+
+Once identified, a connection only ever receives events on the channels its
+service is granted below — every other channel is silently filtered, never
+delivered. This is independent of publish access: any service can still POST
+to any ingest route, as before. Granted strictly on actual consumption
+(least privilege):
+
+| Service  | Token         | Receives                          | Why                                                                 |
+| -------- | ------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| Frontend | `FE_TOKEN`    | every channel                      | Renders every zone's live feed — airport, hotel, beach, crab, parrot, public, admin |
+| Beach    | `BEACH_TOKEN` | `hotel`                             | Listens for `hotel.reservation_confirmed` to mark guests checked in |
+| Hotel    | `HOTEL_TOKEN` | *(none)*                           | Only publishes — never subscribes                                  |
+| Airport  | `AIRPORT_TOKEN` | *(none)*                          | Only publishes — must not see public announcements or anything else |
+| Parrot   | `PARROT_TOKEN`  | *(none)*                          | Only publishes (`/cursed`) — never subscribes                      |
+
+Publishing (every `POST` route below) is unrestricted, matching the existing
+behaviour — this access control only governs what a listener gets back.
 
 ---
 
