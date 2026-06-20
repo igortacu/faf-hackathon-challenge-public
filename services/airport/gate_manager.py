@@ -186,6 +186,59 @@ class GateManager:
             "queued_at": guest["queued_at"],
         }
 
+    def open_gate(self, gate_id: str, gate_type: str) -> dict:
+        if gate_id in self.gates:
+            return {"error": f"Gate {gate_id} already exists"}
+        if gate_type not in ("EU", "ALL"):
+            return {"error": f"Invalid gate_type: {gate_type}"}
+
+        processing_time = PROCESSING_TIME_EU if gate_type == "EU" else PROCESSING_TIME_ALL
+        gate = Gate(gate_id, gate_type, processing_time, self.app,
+                    list(self.gates.values())[0].broadcast)
+        self.gates[gate_id] = gate
+        gate.start()
+        return {"gate_id": gate_id, "gate_type": gate_type, "status": "open"}
+
+    def close_gate(self, gate_id: str) -> dict:
+        gate = self.gates.get(gate_id)
+        if gate is None:
+            return {"error": f"Gate {gate_id} not found"}
+
+        same_type = [g for gid, g in self.gates.items()
+                     if g.gate_type == gate.gate_type and gid != gate_id]
+        if not same_type:
+            return {"error": f"Cannot close the last {gate.gate_type} gate"}
+
+        gate.active = False
+
+        with gate.lock:
+            displaced = list(gate.queue)
+            gate.queue.clear()
+            if gate.currently_processing:
+                cp = gate.currently_processing
+                cp["status"] = "queued"
+                displaced.insert(0, cp)
+                gate.currently_processing = None
+
+        for guest in displaced:
+            target = min(same_type, key=lambda g: len(g.queue))
+            guest["gate"] = target.gate_id
+            with target.lock:
+                target.enqueue(guest)
+            with self.app.app_context():
+                arrival = db.session.get(Arrival, guest["arrival_id"])
+                if arrival:
+                    arrival.gate = target.gate_id
+                    arrival.status = "queued"
+                    db.session.commit()
+
+        del self.gates[gate_id]
+        return {
+            "gate_id": gate_id,
+            "status": "closed",
+            "displaced_guests": len(displaced),
+        }
+
     def get_guest(self, guest_id: str) -> dict | None:
         with self.app.app_context():
             arrival = Arrival.query.filter_by(guest_id=guest_id)\
