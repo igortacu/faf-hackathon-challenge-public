@@ -16,6 +16,14 @@ fun Route.activityRoutes(
             "Hello"
         )
     }
+
+    get("/health") {
+        call.respond(
+            HttpStatusCode.OK,
+            mapOf("status" to "healthy")
+        )
+    }
+
     route("/activity") {
 
         post("/book/{activity_id}") {
@@ -24,6 +32,10 @@ fun Route.activityRoutes(
 
         post("/cancel/{activity_id}") {
             controller.cancel(call)
+        }
+
+        get("/participants/{activity_id}") {
+            controller.getActivityParticipants(call)
         }
 
         get("/{activity_id}") {

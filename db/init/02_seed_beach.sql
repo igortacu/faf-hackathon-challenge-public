@@ -7,6 +7,12 @@ CREATE TABLE IF NOT EXISTS activities (
     capacity INT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS activity_bookings (
+    activity_id VARCHAR(50) NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    visitor_id VARCHAR(50) NOT NULL,
+    PRIMARY KEY (activity_id, visitor_id)
+);
+
 INSERT INTO activities (id, name, description, capacity) VALUES
 ('ACT001', 'Beach Volleyball', 'Competitive beach volleyball tournament.', 20),
 ('ACT002', 'Surf Lessons', 'Beginner-friendly surf training session.', 15),

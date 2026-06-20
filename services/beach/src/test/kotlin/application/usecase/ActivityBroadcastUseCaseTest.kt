@@ -2,6 +2,7 @@ package com.hackathon.summer.faf.application.usecase
 
 import com.hackathon.summer.faf.domain.model.Activity
 import com.hackathon.summer.faf.domain.model.Visitor
+import com.hackathon.summer.faf.domain.repository.ActivityParticipants
 import com.hackathon.summer.faf.domain.repository.ActivityRepository
 import com.hackathon.summer.faf.domain.repository.VisitorRepository
 import com.hackathon.summer.faf.infrastructure.broadcast.ActivityAvailabilityEvent
@@ -121,11 +122,22 @@ private class InMemoryActivityRepository(
     override fun findById(id: String): Activity? =
         activity.takeIf { it.id == id }
 
+    override fun findParticipantsByActivityId(id: String): ActivityParticipants? =
+        activity.takeIf { it.id == id }?.let {
+            ActivityParticipants(
+                activityId = it.id,
+                capacity = it.capacity,
+                participants = it.bookedVisitors.toList()
+            )
+        }
+
     override fun save(activity: Activity) = Unit
 }
 
 private class EmptyVisitorRepository : VisitorRepository {
-    override fun findById(id: String): Visitor? = null
+    // Booking now requires the visitor to exist and be checked in, so the
+    // broadcast tests provide a checked-in visitor for any id.
+    override fun findById(id: String): Visitor? = Visitor(id = id, checkedIn = true)
 
     override fun markCheckedIn(id: String) = Unit
 }

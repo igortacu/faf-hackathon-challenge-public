@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -9,6 +10,24 @@ import (
 type rateLimitUpdate struct {
 	Limit  *int    `json:"limit"`
 	Window *string `json:"window"` // Go duration string, optional
+}
+
+// RequireAdmin guards admin endpoints with the X-Admin-Passcode header. It fails
+// open only when no passcode is configured, so a configured deployment is locked
+// down while an unconfigured one keeps the endpoint reachable.
+func RequireAdmin(passcode string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if passcode != "" {
+			provided := r.Header.Get("X-Admin-Passcode")
+			if provided == "" || subtle.ConstantTimeCompare([]byte(provided), []byte(passcode)) != 1 {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error": "Admin authentication required"}`))
+				return
+			}
+		}
+		next(w, r)
+	}
 }
 
 // AdminRateLimitHandler updates the live rate limiter at runtime.
