@@ -5,6 +5,7 @@ import { ChannelId, EventType } from "../types.js";
 
 const router = Router();
 
+// Airport publishes: { channel, message, sender, data: { guest_id, name, surname, ... } }
 router.post("/arrival", (req, res) => {
   const { message, guest_id, guest_name, ...data } = req.body;
 

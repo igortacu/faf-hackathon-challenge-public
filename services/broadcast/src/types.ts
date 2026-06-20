@@ -14,12 +14,29 @@ export enum EventType {
   HOTEL_CANCEL = "hotel.reservation_cancelled",
 
   BEACH_FULL = "beach.activity_full",
+  BEACH_AVAILABLE = "beach.activity_available",
 
   PUBLIC_ANNOUNCEMENT = "public.announcement",
 
   ADMIN_ANNOUNCEMENT = "admin.announcement",
 }
 
+// Channels mirror the consumer contract (frontend ChannelId). Events are
+// bucketed by channel on the listener side, so each route sets the channel of
+// its source service; the listener mirrors non-resort-wide channels to the
+// resort-wide feed on its own.
+export enum ChannelId {
+  Airport = "airport",
+  Hotel = "hotel",
+  Beach = "beach",
+  Parrot = "parrot",
+  Broadcast = "broadcast",
+  ResortWide = "resort-wide",
+}
+
+// IslandEvent is the wire shape delivered to SSE listeners. It matches the
+// consumer's BroadcastEventSchema exactly so events pass validation and get
+// bucketed by `channel`.
 export interface IslandEvent {
   id: string;
   channel: ChannelId;

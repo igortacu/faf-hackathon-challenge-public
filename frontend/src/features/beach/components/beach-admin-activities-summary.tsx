@@ -5,13 +5,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { getActivities } from "@/features/beach/api/beach-client";
 import { BEACH_KEYS } from "@/features/beach/query-keys";
 import { ActivityCard } from "@/features/beach/components/activity-card";
-import { POLL_INTERVAL_MS } from "@/lib/polling";
 
 export function BeachAdminActivitiesSummary() {
   const { data, isLoading, error } = useQuery({
     queryKey: [...BEACH_KEYS.ACTIVITIES],
     queryFn: getActivities,
-    refetchInterval: POLL_INTERVAL_MS,
   });
 
   if (isLoading) {

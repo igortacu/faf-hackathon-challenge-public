@@ -5,8 +5,9 @@ import { ChannelId, EventType } from "../types.js";
 
 const router = Router();
 
+// Public announcements publish: { guestName, message }
 router.post("/", (req, res) => {
-  const { guestName, message } = req.body;
+  const { guestName, message } = req.body ?? {};
 
   broadcast({
     id: uuid(),

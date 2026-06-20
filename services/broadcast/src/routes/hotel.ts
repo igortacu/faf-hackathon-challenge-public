@@ -6,6 +6,7 @@ import { ChannelId, EventType } from "../types.js";
 
 const router = Router();
 
+// Hotel publishes: { type, payload: { message, reservation_id, guest_id, ... } }
 router.post("/confirm", (req, res) => {
   const { message, guest_id, guest_name, ...data } = req.body;
 
