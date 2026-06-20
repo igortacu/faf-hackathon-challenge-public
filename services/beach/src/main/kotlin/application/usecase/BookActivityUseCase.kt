@@ -32,6 +32,10 @@ class BookActivityUseCase(
             return ActivityErrors.ACTIVITY_ALREADY_BOOKED
         }
 
+        if (activityRepository.isVisitorBooked(visitorId)) {
+            return ActivityErrors.VISITOR_ALREADY_IN_ACTIVITY
+        }
+
         if (activity.isFull()) {
             return ActivityErrors.ACTIVITY_FULL
         }

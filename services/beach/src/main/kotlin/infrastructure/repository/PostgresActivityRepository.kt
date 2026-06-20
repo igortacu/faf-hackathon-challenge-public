@@ -53,6 +53,16 @@ class PostgresActivityRepository : ActivityRepository {
         }
     }
 
+    override fun isVisitorBooked(visitorId: String): Boolean {
+
+        return transaction {
+
+            ActivityBookingsTable
+                .select { ActivityBookingsTable.visitorId eq visitorId }
+                .count() > 0
+        }
+    }
+
     override fun save(activity: Activity) {
 
         transaction {

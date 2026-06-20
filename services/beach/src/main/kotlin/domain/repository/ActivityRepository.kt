@@ -16,6 +16,8 @@ interface ActivityRepository {
 
     fun findParticipantsByActivityId(id: String): ActivityParticipants?
 
+    fun isVisitorBooked(visitorId: String): Boolean
+
     fun save(activity: Activity)
 
     /** Inserts a new activity. Returns false (no-op) if the id already exists. */

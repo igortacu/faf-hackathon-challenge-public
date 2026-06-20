@@ -124,8 +124,15 @@ class ActivityController(
     suspend fun getActivityParticipants(call: ApplicationCall) {
 
         val activityId = call.parameters["activity_id"]
+        if (activityId.isNullOrBlank()) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(ActivityErrors.MISSING_ACTIVITY_ID)
+            )
+            return
+        }
 
-        val participants = activityRepository.findParticipantsByActivityId(activityId!!)
+        val participants = activityRepository.findParticipantsByActivityId(activityId)
 
         if (participants == null) {
             call.respond(
@@ -224,6 +231,7 @@ class ActivityController(
         ActivityErrors.ACTIVITY_FULL,
         ActivityErrors.ACTIVITY_ALREADY_BOOKED,
         ActivityErrors.ACTIVITY_NOT_BOOKED,
+        ActivityErrors.VISITOR_ALREADY_IN_ACTIVITY,
         VisitorErrors.VISITOR_NOT_CHECKED_IN -> HttpStatusCode.Conflict
 
         else -> HttpStatusCode.BadRequest

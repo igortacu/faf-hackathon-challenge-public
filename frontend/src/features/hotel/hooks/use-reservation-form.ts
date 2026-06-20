@@ -36,9 +36,13 @@ export function useReservationForm() {
     },
     onSuccess: (reservation) => {
       setConfirmed(reservation);
-      queryClient.invalidateQueries({
-        queryKey: [...HOTEL_KEYS.RESERVATION],
-      });
+      // Immediately populate the reservation cache so the card appears
+      // without waiting for a background refetch (especially important when
+      // the query was previously in error state from a 404).
+      queryClient.setQueryData(
+        [...HOTEL_KEYS.RESERVATION, guest?.id],
+        reservation,
+      );
       queryClient.invalidateQueries({ queryKey: [...HOTEL_KEYS.ROOMS] });
     },
     onError: (error) => {
