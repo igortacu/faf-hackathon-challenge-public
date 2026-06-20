@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsString, Min } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { RoomType } from '../../../generated/prisma/client.js';
 
 export class CreateReservationDto {
@@ -13,6 +13,11 @@ export class CreateReservationDto {
   @IsInt()
   @Min(1)
   guest_count!: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  party_guest_ids?: string[];
 
   @Type(() => Number)
   @IsInt()

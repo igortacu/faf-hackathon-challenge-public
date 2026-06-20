@@ -36,4 +36,13 @@ model Reservation {
   check_out_day Int
   status        ReservationStatus @default(CONFIRMED)
   room          Room              @relation(fields: [room_id], references: [id])
+  guests        ReservationGuest[]
+}
+
+model ReservationGuest {
+  reservation_id String
+  guest_id       String
+  reservation    Reservation @relation(fields: [reservation_id], references: [id], onDelete: Cascade)
+
+  @@id([reservation_id, guest_id])
 }
