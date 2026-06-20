@@ -60,21 +60,31 @@ def _is_profane(token: str) -> bool:
     return bool(stripped) and _normalise(stripped) in _PROFANITY_SET
 
 
-def mask_profanity(text: str) -> str:
+def mask_profanity(text: str) -> tuple[str, bool]:
     """Mask profane words in user-supplied text, preserving length with '*'.
+
+    Returns (masked_text, was_masked) so callers can tell whether any word was
+    actually replaced — without relying on the presence of '*' in the output.
 
     Only whole words are masked — including obvious letter-swap / leetspeak
     variants such as "a$$" — so swear words appearing as substrings of innocent
     words ("passport", "assertive", "hello") are left completely untouched.
     """
     if not text or not _PROFANITY_SET:
-        return text
+        return text, False
+
+    masked = False
 
     def _replace(match: "re.Match[str]") -> str:
+        nonlocal masked
         token = match.group(0)
-        return MASK_CHAR * len(token) if _is_profane(token) else token
+        if _is_profane(token):
+            masked = True
+            return MASK_CHAR * len(token)
+        return token
 
-    return _TOKEN_RE.sub(_replace, text)
+    result = _TOKEN_RE.sub(_replace, text)
+    return result, masked
 
 
 def contains_mask(text) -> bool:

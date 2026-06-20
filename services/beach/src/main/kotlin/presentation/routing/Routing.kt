@@ -40,6 +40,8 @@ fun Route.activityRoutes(
 
         delete("/{activity_id}") {
             controller.remove(call)
+        }
+
         get("/participants/{activity_id}") {
             controller.getActivityParticipants(call)
         }
