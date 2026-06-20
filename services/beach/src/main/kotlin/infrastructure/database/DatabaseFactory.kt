@@ -1,6 +1,7 @@
 package com.hackathon.summer.faf.infrastructure.database
 
 import com.hackathon.summer.faf.infrastructure.database.table.ActivityTable
+import com.hackathon.summer.faf.infrastructure.database.table.ActivityBookingsTable
 import com.hackathon.summer.faf.infrastructure.database.table.VisitorsTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -40,7 +41,7 @@ object DatabaseFactory {
 
         transaction {
 
-            SchemaUtils.create(ActivityTable, VisitorsTable)
+            SchemaUtils.create(ActivityTable, ActivityBookingsTable, VisitorsTable)
         }
     }
 }

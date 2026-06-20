@@ -26,6 +26,10 @@ fun Route.activityRoutes(
             controller.cancel(call)
         }
 
+        get("/participants/{activity_id}") {
+            controller.getActivityParticipants(call)
+        }
+
         get("/{activity_id}") {
             controller.getActivity(call)
         }
