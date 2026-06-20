@@ -16,6 +16,14 @@ fun Route.activityRoutes(
             "Hello"
         )
     }
+
+    get("/health") {
+        call.respond(
+            HttpStatusCode.OK,
+            mapOf("status" to "healthy")
+        )
+    }
+
     route("/activity") {
 
         post("/book/{activity_id}") {
