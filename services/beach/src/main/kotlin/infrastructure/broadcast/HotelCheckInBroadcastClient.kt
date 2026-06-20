@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class HotelCheckInBroadcastClient(
     private val broadcastServiceUrl: String?,
     private val visitorRepository: VisitorRepository,
+    private val serviceToken: String? = null,
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(5))
         .build(),
@@ -41,11 +42,17 @@ class HotelCheckInBroadcastClient(
     }
 
     private fun listen(eventsUrl: String) {
-        val request = HttpRequest.newBuilder()
+        val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(eventsUrl))
             .timeout(Duration.ofSeconds(30))
             .GET()
-            .build()
+
+        // Broadcast enforces per-service channel access on /events — identifies the
+        // caller by this token (see services/broadcast/src/serviceAuth.ts) and scopes
+        // the stream to what Beach is authorised to receive (the hotel channel only).
+        serviceToken?.let { requestBuilder.header("X-Service-Token", it) }
+
+        val request = requestBuilder.build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofLines())
         if (response.statusCode() !in 200..299) {

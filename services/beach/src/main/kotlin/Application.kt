@@ -21,6 +21,7 @@ fun Application.module() {
 
     HotelCheckInBroadcastClient(
         broadcastServiceUrl = System.getenv("BROADCAST_SERVICE_URL"),
-        visitorRepository = PostgresVisitorRepository()
+        visitorRepository = PostgresVisitorRepository(),
+        serviceToken = System.getenv("BEACH_TOKEN")
     ).start()
 }
