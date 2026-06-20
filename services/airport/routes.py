@@ -100,6 +100,30 @@ def register_routes(app):
             "total": total,
         }), 200
 
+    @app.route("/admin/gates", methods=["POST"])
+    def open_gate():
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
+
+        gate_id = data.get("gate_id")
+        gate_type = data.get("gate_type")
+        if not gate_id or not gate_type:
+            return jsonify({"error": "gate_id and gate_type are required"}), 400
+
+        result = app.gate_manager.open_gate(gate_id, gate_type)
+        if "error" in result:
+            return jsonify(result), 409
+        return jsonify(result), 201
+
+    @app.route("/admin/gates/<gate_id>", methods=["DELETE"])
+    def close_gate(gate_id):
+        result = app.gate_manager.close_gate(gate_id)
+        if "error" in result:
+            code = 404 if "not found" in result["error"] else 409
+            return jsonify(result), code
+        return jsonify(result), 200
+
     @app.route("/queue", methods=["GET"])
     def get_queue():
         return jsonify(app.gate_manager.get_all_gates_status()), 200
