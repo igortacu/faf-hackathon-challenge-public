@@ -26,6 +26,10 @@ fun Route.activityRoutes(
 
     route("/activity") {
 
+        post {
+            controller.create(call)
+        }
+
         post("/book/{activity_id}") {
             controller.book(call)
         }
@@ -34,6 +38,8 @@ fun Route.activityRoutes(
             controller.cancel(call)
         }
 
+        delete("/{activity_id}") {
+            controller.remove(call)
         get("/participants/{activity_id}") {
             controller.getActivityParticipants(call)
         }

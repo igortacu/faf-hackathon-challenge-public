@@ -1,16 +1,20 @@
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getActivities } from "@/features/beach/api/beach-client";
+import { AddActivityForm } from "@/features/beach/components/add-activity-form";
 import { BEACH_KEYS } from "@/features/beach/query-keys";
 import { ActivityCard } from "@/features/beach/components/activity-card";
+import { useManageActivities } from "@/features/beach/hooks/use-manage-activities";
 
 export function BeachAdminActivitiesSummary() {
   const { data, isLoading, error } = useQuery({
     queryKey: [...BEACH_KEYS.ACTIVITIES],
     queryFn: getActivities,
   });
+  const { remove, isRemoving } = useManageActivities();
 
   if (isLoading) {
     return (
@@ -39,6 +43,7 @@ export function BeachAdminActivitiesSummary() {
 
   return (
     <div className="flex flex-col gap-3">
+      <AddActivityForm />
       <div className="flex items-center justify-between">
         <span className="font-display text-sm font-medium">
           Beach activities
@@ -49,7 +54,21 @@ export function BeachAdminActivitiesSummary() {
       </div>
       <div className="flex flex-col gap-2">
         {activities.map((activity) => (
-          <ActivityCard key={activity.activity_id} activity={activity} />
+          <ActivityCard
+            key={activity.activity_id}
+            activity={activity}
+            action={
+              <Button
+                data-testid={`remove-activity-${activity.activity_id}`}
+                variant="destructive"
+                size="xs"
+                disabled={isRemoving}
+                onClick={() => remove(activity.activity_id)}
+              >
+                Remove
+              </Button>
+            }
+          />
         ))}
       </div>
     </div>
