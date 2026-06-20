@@ -177,6 +177,10 @@ class GateManager:
 
         with gate.lock:
             position = gate.enqueue(guest)
+            ahead = position - 1
+            if gate.currently_processing:
+                ahead += 1
+            estimated_wait = ahead * gate.processing_time
 
         return {
             "guest_id": guest["guest_id"],
@@ -184,6 +188,7 @@ class GateManager:
             "position": position,
             "queue_size": len(gate.queue),
             "queued_at": guest["queued_at"],
+            "estimated_wait_seconds": estimated_wait,
         }
 
     def get_guest(self, guest_id: str) -> dict | None:
