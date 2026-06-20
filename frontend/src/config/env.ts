@@ -6,7 +6,7 @@ const EnvSchema = z.object({
   VITE_ADMIN_PASSCODE: z.string().default(""),
   VITE_TRAFFIC_GENERATOR: z.string().default("on"),
   VITE_PARROT_CHAT_COOLDOWN_MS: z.coerce.number().int().positive().catch(30_000),
-  VITE_SIMULATION_START_TIME: z.string().default("2026-06-14T09:00:00Z"),
+  VITE_SIMULATION_START_TIME: z.string().default("2026-06-20T00:00:00Z"),
   VITE_GAME_SPEED: z.coerce.number().positive().catch(300),
 });
 

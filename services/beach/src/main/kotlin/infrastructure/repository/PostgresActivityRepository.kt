@@ -84,6 +84,7 @@ class PostgresActivityRepository : ActivityRepository {
                 }
             }
 
+            // Replace the persisted booking set with the model's current state.
             ActivityBookingsTable.deleteWhere {
                 ActivityBookingsTable.activityId eq activity.id
             }

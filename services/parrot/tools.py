@@ -90,10 +90,26 @@ _DISPATCH = {
     "get_guest_journey_status": lambda *, guest_id, **_: get_guest_journey_status(guest_id),
 }
 
+# Tools that read a specific guest's private data. The guest_id for these is
+# always forced to the authenticated session guest, never taken from the model's
+# tool arguments — otherwise a prompt-injected message could make the model fetch
+# another guest's reservation/arrival data (BOLA / IDOR).
+_GUEST_SCOPED_TOOLS = {
+    "get_guest_arrival_status",
+    "get_guest_reservation",
+    "get_guest_journey_status",
+}
+
 async def execute_tool(name: str, arguments: dict, allowed_guest_id: str | None) -> str:
     fn = _DISPATCH.get(name)
     if fn is None:
         return json.dumps({"error": f"Unknown tool: {name}"})
+
+    if name in _GUEST_SCOPED_TOOLS:
+        if not allowed_guest_id:
+            return json.dumps({"error": "No guest is associated with this conversation"})
+        # Override any model-supplied guest_id with the session guest's id.
+        arguments = {**arguments, "guest_id": allowed_guest_id}
 
     try:
         return await fn(**arguments)

@@ -28,6 +28,11 @@ export class ReservationService {
       );
     }
 
+    // Verify the guest has cleared airport processing before persisting
+    // anything, so a rejected guest never leaves a CONFIRMED reservation
+    // orphaned in the database.
+    await this.rejectIfGuestHasNotClearedAirport(createReservationDto.guest_id);
+
     const rooms = await this.prisma.room.findMany({
       where: { type: createReservationDto.room_type },
       orderBy: { id: 'asc' },
@@ -84,8 +89,6 @@ export class ReservationService {
         status: ReservationStatus.CONFIRMED,
       },
     });
-
-    await this.rejectIfGuestHasNotClearedAirport(reservation.guest_id);
 
     await this.broadcast.publishHotelEvent(
       HotelBroadcastEventType.ReservationConfirmed,

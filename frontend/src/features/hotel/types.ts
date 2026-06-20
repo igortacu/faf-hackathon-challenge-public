@@ -20,13 +20,17 @@ export const ROOM_PRICE_PER_NIGHT: Record<RoomType, number> = {
 export const ReservationStatusSchema = z.enum(["CONFIRMED", "CANCELLED"]);
 export type ReservationStatus = z.infer<typeof ReservationStatusSchema>;
 
-export const RoomSchema = z.object({
-  id: z.string(),
-  type: RoomTypeSchema,
-  capacity: z.number().int(),
-  price_per_night: z.number().int(),
-  occupancy: z.number().int(),
-});
+export const RoomSchema = z
+  .object({
+    id: z.string(),
+    type: RoomTypeSchema,
+    capacity: z.number().int(),
+    price_per_night: z.number().int(),
+    // The hotel service returns `current_guests`; expose it as `occupancy`
+    // for the UI without changing the API contract.
+    current_guests: z.number().int(),
+  })
+  .transform((room) => ({ ...room, occupancy: room.current_guests }));
 
 export const RoomsResponseSchema = z.object({
   rooms: z.array(RoomSchema),

@@ -23,7 +23,10 @@ export class AirportService {
         await response.text(),
       ) as AirportArrivalResponseDto;
 
-      return body.isProcessed;
+      // The airport service returns a snake_case `status` field; there is no
+      // `isProcessed`. A guest has cleared processing only when status is
+      // "processed".
+      return body.status === 'processed';
     } catch {
       return null;
     }
