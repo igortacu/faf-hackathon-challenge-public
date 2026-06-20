@@ -14,6 +14,7 @@ type Config struct {
 	AirportServiceURL   string
 	HotelServiceURL     string
 	BeachServiceURL     string
+	CrabServiceURL      string
 	BroadcastServiceURL string
 	ParrotServiceURL    string
 
@@ -22,11 +23,13 @@ type Config struct {
 	AirportServicePool   []string
 	HotelServicePool     []string
 	BeachServicePool     []string
+	CrabServicePool      []string
 	BroadcastServicePool []string
 	ParrotServicePool    []string
 
 	CORSOrigins    []string
 	InternalSecret string
+	AdminPasscode  string // ADMIN_PASSCODE — guards /admin/* (empty = open)
 
 	// Optional cache and rate-limit settings. All disabled by their zero value.
 	CacheTTL           time.Duration // GATEWAY_CACHE_TTL — response cache TTL (0 = off)
@@ -38,6 +41,7 @@ func LoadConfig() Config {
 	airport := splitEnv("AIRPORT_SERVICE_URL", "http://localhost:3001")
 	hotel := splitEnv("HOTEL_SERVICE_URL", "http://localhost:3000")
 	beach := splitEnv("BEACH_SERVICE_URL", "")
+	crab := splitEnv("CRAB_SERVICE_URL", "")
 	broadcast := splitEnv("BROADCAST_SERVICE_URL", "")
 	parrot := splitEnv("PARROT_SERVICE_URL", "")
 
@@ -47,17 +51,20 @@ func LoadConfig() Config {
 		AirportServiceURL:   firstURL(airport),
 		HotelServiceURL:     firstURL(hotel),
 		BeachServiceURL:     firstURL(beach),
+		CrabServiceURL:      firstURL(crab),
 		BroadcastServiceURL: firstURL(broadcast),
 		ParrotServiceURL:    firstURL(parrot),
 
 		AirportServicePool:   airport,
 		HotelServicePool:     hotel,
 		BeachServicePool:     beach,
+		CrabServicePool:      crab,
 		BroadcastServicePool: broadcast,
 		ParrotServicePool:    parrot,
 
 		CORSOrigins:    splitEnv("CORS_ALLOWED_ORIGINS", ""),
 		InternalSecret: getEnv("INTERNAL_SECRET", ""),
+		AdminPasscode:  getEnv("ADMIN_PASSCODE", ""),
 
 		CacheTTL:           getDurationEnv("GATEWAY_CACHE_TTL", 0),
 		RateLimitPerWindow: getIntEnv("GATEWAY_RATE_LIMIT", 0),

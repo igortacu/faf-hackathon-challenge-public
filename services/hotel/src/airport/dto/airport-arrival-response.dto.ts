@@ -1,12 +1,12 @@
 export type AirportArrivalStatus = 'queued' | 'processing' | 'processed';
 
+// Mirrors the airport service's GET /arrivals/:guest_id response (snake_case).
 export class AirportArrivalResponseDto {
-  guestId: string;
+  guest_id: string;
   status: AirportArrivalStatus;
-  isProcessed: boolean;
   gate: string | null;
   position: number | null;
-  queuedAt: number;
-  processedAt: number | null;
-  waitTimeSeconds: number;
+  queued_at: number;
+  processed_at: number | null;
+  wait_time_seconds: number;
 }

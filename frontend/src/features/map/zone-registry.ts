@@ -3,11 +3,13 @@ import {
   IconPlaneDeparture,
   IconBed,
   IconUmbrella,
+  IconToolsKitchen2,
   IconFeather,
   IconBuildingLighthouse,
 } from "@tabler/icons-react";
 import airportZoneArt from "@/assets/zones/airport.svg";
 import beachZoneArt from "@/assets/zones/beach.svg";
+import crabZoneArt from "@/assets/zones/crab.png";
 import hotelZoneArt from "@/assets/zones/hotel.svg";
 import lighthouseZoneArt from "@/assets/zones/lighthouse.svg";
 import parrotZoneArt from "@/assets/zones/parrot.svg";
@@ -72,6 +74,19 @@ export const ZONE_REGISTRY: Record<ZoneId, ZoneDefinition> = {
     accent: "#fbbf24",
     markerSrc: beachZoneArt,
     markerScale: 1,
+  },
+  [ZoneId.Crab]: {
+    id: ZoneId.Crab,
+    label: "The Crusty Crab",
+    description:
+      "Order a Krabby Patty and other island eats from Mr. Crab. Some items are limited and sell out for the day!",
+    adminDescription: "Observe Crusty Crab orders and sold-out events.",
+    icon: IconToolsKitchen2,
+    channel: ChannelId.Crab,
+    position: { x: 1080, y: 1240 },
+    accent: "#ef4444",
+    markerSrc: crabZoneArt,
+    markerScale: 1.2,
   },
   [ZoneId.Parrot]: {
     id: ZoneId.Parrot,

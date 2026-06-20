@@ -4,6 +4,7 @@ from services import (
     get_airport_stats,
     get_airport_queue_status,
     get_hotel_rooms,
+    get_crab_menu,
     get_guest_arrival_status,
     get_guest_reservation,
     get_guest_journey_status,
@@ -31,6 +32,14 @@ TOOL_SCHEMAS = [
         "function": {
             "name": "get_hotel_rooms",
             "description": "Get all hotel rooms with current availability, types, capacity, and pricing. Use this for any question that touches rooms, reservations, bookings, check-in/out, or how the hotel works — including general or definitional ones.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_crab_menu",
+            "description": "Get the Crusty Crab restaurant's current menu: item names, prices (in clamshells), and which items are available or sold out for the day. Use this for any question about food, the Crusty Crab, Krabby Patties, or what's for sale on the island.",
             "parameters": {"type": "object", "properties": {}, "required": []},
         },
     },
@@ -85,15 +94,32 @@ _DISPATCH = {
     "get_airport_stats": lambda **_: get_airport_stats(),
     "get_airport_queue_status": lambda **_: get_airport_queue_status(),
     "get_hotel_rooms": lambda **_: get_hotel_rooms(),
+    "get_crab_menu": lambda **_: get_crab_menu(),
     "get_guest_arrival_status": lambda *, guest_id, **_: get_guest_arrival_status(guest_id),
     "get_guest_reservation": lambda *, guest_id, **_: get_guest_reservation(guest_id),
     "get_guest_journey_status": lambda *, guest_id, **_: get_guest_journey_status(guest_id),
+}
+
+# Tools that read a specific guest's private data. The guest_id for these is
+# always forced to the authenticated session guest, never taken from the model's
+# tool arguments — otherwise a prompt-injected message could make the model fetch
+# another guest's reservation/arrival data (BOLA / IDOR).
+_GUEST_SCOPED_TOOLS = {
+    "get_guest_arrival_status",
+    "get_guest_reservation",
+    "get_guest_journey_status",
 }
 
 async def execute_tool(name: str, arguments: dict, allowed_guest_id: str | None) -> str:
     fn = _DISPATCH.get(name)
     if fn is None:
         return json.dumps({"error": f"Unknown tool: {name}"})
+
+    if name in _GUEST_SCOPED_TOOLS:
+        if not allowed_guest_id:
+            return json.dumps({"error": "No guest is associated with this conversation"})
+        # Override any model-supplied guest_id with the session guest's id.
+        arguments = {**arguments, "guest_id": allowed_guest_id}
 
     try:
         return await fn(**arguments)
