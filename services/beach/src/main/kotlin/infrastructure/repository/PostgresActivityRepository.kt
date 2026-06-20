@@ -3,7 +3,9 @@ package com.hackathon.summer.faf.infrastructure.repository
 import com.hackathon.summer.faf.domain.model.Activity
 import com.hackathon.summer.faf.domain.repository.ActivityRepository
 import com.hackathon.summer.faf.infrastructure.database.table.ActivityTable
+import com.hackathon.summer.faf.infrastructure.database.table.BookingsTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class PostgresActivityRepository : ActivityRepository {
@@ -12,13 +14,22 @@ class PostgresActivityRepository : ActivityRepository {
 
         return transaction {
 
+            val bookingsByActivity = BookingsTable
+                .selectAll()
+                .groupBy({ it[BookingsTable.activityId] }, { it[BookingsTable.visitorId] })
+
             ActivityTable.selectAll().map {
 
+                val activityId = it[ActivityTable.id]
+
                 Activity(
-                    id = it[ActivityTable.id],
+                    id = activityId,
                     name = it[ActivityTable.name],
                     description = it[ActivityTable.description],
-                    capacity = it[ActivityTable.capacity]
+                    capacity = it[ActivityTable.capacity],
+                    bookedVisitors = bookingsByActivity[activityId]
+                        ?.toMutableSet()
+                        ?: mutableSetOf()
                 )
             }
         }
@@ -28,18 +39,23 @@ class PostgresActivityRepository : ActivityRepository {
 
         return transaction {
 
-            ActivityTable
+            val row = ActivityTable
                 .select { ActivityTable.id eq id }
-                .map {
-
-                    Activity(
-                        id = it[ActivityTable.id],
-                        name = it[ActivityTable.name],
-                        description = it[ActivityTable.description],
-                        capacity = it[ActivityTable.capacity]
-                    )
-                }
                 .singleOrNull()
+                ?: return@transaction null
+
+            val bookedVisitors = BookingsTable
+                .select { BookingsTable.activityId eq id }
+                .map { it[BookingsTable.visitorId] }
+                .toMutableSet()
+
+            Activity(
+                id = row[ActivityTable.id],
+                name = row[ActivityTable.name],
+                description = row[ActivityTable.description],
+                capacity = row[ActivityTable.capacity],
+                bookedVisitors = bookedVisitors
+            )
         }
     }
 
@@ -71,6 +87,16 @@ class PostgresActivityRepository : ActivityRepository {
                     it[name] = activity.name
                     it[description] = activity.description
                     it[capacity] = activity.capacity
+                }
+            }
+
+            // Replace the persisted booking set with the model's current state.
+            BookingsTable.deleteWhere { BookingsTable.activityId eq activity.id }
+
+            activity.bookedVisitors.forEach { visitor ->
+                BookingsTable.insert {
+                    it[activityId] = activity.id
+                    it[visitorId] = visitor
                 }
             }
         }
