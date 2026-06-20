@@ -60,6 +60,14 @@ export const CrabSoldOutSchema = z
   })
   .strict();
 
+export const CursedEventSchema = z
+  .object({
+    guest_id: z.string().min(1, "guest_id is required"),
+    message: z.string().min(1, "message is required"),
+    triggered_word: z.array(z.string()).min(1, "triggered_word is required"),
+  })
+  .strict();
+
 export const PublicAnnouncementSchema = z
   .object({
     guestName: z.string().min(1, "guestName is required"),

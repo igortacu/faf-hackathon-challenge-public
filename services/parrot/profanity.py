@@ -90,3 +90,22 @@ def mask_profanity(text: str) -> tuple[str, bool]:
 def contains_mask(text) -> bool:
     """True if text carries a profanity mask produced by mask_profanity."""
     return bool(text) and MASK_CHAR in text
+
+
+def find_profane_words(text: str) -> list[str]:
+    """Return the normalised profane words found in text, in order of appearance.
+
+    Shares the same tokenisation and matching rules as mask_profanity (via
+    _is_profane / _normalise), so any text that produces was_masked=True there
+    also produces a non-empty list here. Used to report *which* word(s) tripped
+    the filter (e.g. for the public "cursed" notification) without changing
+    mask_profanity's existing (text, was_masked) contract.
+    """
+    if not text or not _PROFANITY_SET:
+        return []
+
+    return [
+        _normalise(match.group(0).strip(_EDGE_PUNCTUATION))
+        for match in _TOKEN_RE.finditer(text)
+        if _is_profane(match.group(0))
+    ]

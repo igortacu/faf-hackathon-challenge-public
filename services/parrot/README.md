@@ -80,6 +80,7 @@ LLM_API_KEY=your-key uvicorn main:app --port 3003
 | `LLM_TOP_P`           | `1.0`                            | Nucleus sampling top-p                                          |
 | `AIRPORT_SERVICE_URL`  | `http://localhost:3001`          | Airport service base URL                                       |
 | `HOTEL_SERVICE_URL`    | `http://localhost:3000`          | Hotel service base URL                                         |
+| `BROADCAST_SERVICE_URL`| `http://localhost:3002`          | Broadcast (lighthouse) service base URL — receives `/cursed` profanity notifications |
 | `INTERNAL_SECRET`      | `""`                             | Shared secret sent as `X-Internal-Key` for interservice calls  |
 | `CONTEXT_DIR`          | `context`                        | Path to folder with resort context documents                   |
 | `MAX_HISTORY_MESSAGES` | `20`                             | Max user+assistant messages kept per conversation              |
@@ -244,6 +245,7 @@ Parrot fetches live data from the airport and hotel services via HTTP. All calls
 | `GET ${AIRPORT_SERVICE_URL}/arrivals/{id}`    | `get_guest_arrival_status`, `get_guest_journey_status` |
 | `GET ${HOTEL_SERVICE_URL}/rooms`              | `get_hotel_rooms`          |
 | `GET ${HOTEL_SERVICE_URL}/reservation/by-guest/{id}` | `get_guest_reservation`, `get_guest_journey_status` |
+| `POST ${BROADCAST_SERVICE_URL}/cursed`        | Profanity notification (see [Message filtering](#message-filtering)) |
 
 `get_guest_journey_status` calls the airport and hotel endpoints concurrently and tolerates either
 leg failing (a 404 / timeout becomes an `{"error": ...}` marker in that part of the result).
@@ -262,6 +264,13 @@ If a downstream service is unreachable or returns an error, the tool returns a J
 ## Message filtering
 
 Each guest message is passed through a profanity filter before it reaches the LLM and the stored conversation history: words from a stop list are masked with `*` (length preserved, case-insensitive). The stop list comes from the `PROFANITY_WORDS` env var (comma-separated), falling back to a curated built-in default when unset. Filtering applies to the **guest's** message only — model replies and tool output are not masked. See `profanity.py`.
+
+When a message trips the filter **and** the request carries a `guest_id`, the service fires a
+public notification to the broadcast (lighthouse) service: `POST ${BROADCAST_SERVICE_URL}/cursed`
+with `{ guest_id, message, triggered_word }` — the original (unmasked) message and the list of
+normalised words that matched. This is fire-and-forget (a broadcast outage never affects the chat
+response) and is skipped for anonymous requests, since there's no guest to attribute the
+notification to.
 
 ## Conversation management
 

@@ -139,6 +139,7 @@ services:
       airport_service_url: http://airport:3001
       hotel_service_url: http://hotel:3000
       crab_service_url: http://crab:3004
+      broadcast_service_url: http://broadcast:3002
       ADMIN_PASSCODE: ${VITE_ADMIN_PASSCODE:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3003/health')"]
@@ -150,6 +151,8 @@ services:
       airport:
         condition: service_started
       hotel:
+        condition: service_started
+      broadcast:
         condition: service_started
 
   parrot-b:
@@ -160,6 +163,7 @@ services:
       airport_service_url: http://airport:3001
       hotel_service_url: http://hotel:3000
       crab_service_url: http://crab:3004
+      broadcast_service_url: http://broadcast:3002
       ADMIN_PASSCODE: ${VITE_ADMIN_PASSCODE:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3003/health')"]
@@ -171,6 +175,8 @@ services:
       airport:
         condition: service_started
       hotel:
+        condition: service_started
+      broadcast:
         condition: service_started
 
   gateway:

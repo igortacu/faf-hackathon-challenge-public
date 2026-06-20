@@ -4,6 +4,7 @@ import airportRoutes from "./routes/airport.js";
 import hotelRoutes from "./routes/hotel.js";
 import beachRoutes from "./routes/beach.js";
 import crabRoutes from "./routes/crab.js";
+import cursedRoutes from "./routes/cursed.js";
 import publicRoutes from "./routes/public.js";
 import adminRoutes from "./routes/admin.js";
 import eventRoutes from "./routes/events.js";
@@ -24,6 +25,7 @@ export function createApp(): Express {
   app.use("/hotel/", hotelRoutes);
   app.use("/beach/", beachRoutes);
   app.use("/crab/", crabRoutes);
+  app.use("/cursed/", cursedRoutes);
   app.use("/public/", publicRoutes);
   app.use("/admin/", adminRoutes);
 

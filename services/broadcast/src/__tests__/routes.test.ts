@@ -136,6 +136,21 @@ describe("broadcast routes deliver to the listener", () => {
     assert.equal(data.message, "Surfing has a free slot");
   });
 
+  it("POST /cursed → parrot channel, public profanity notification", async () => {
+    const data = await publishAndReceive("/cursed", {
+      guest_id: "guest-kiki-0001",
+      message: "This damn parrot",
+      triggered_word: ["damn"],
+    });
+
+    assert.equal(data.channel, "parrot");
+    assert.equal(data.event_type, "parrot.cursed");
+    assert.equal(data.message, "This damn parrot");
+    assert.equal(data.sender, "parrot");
+    assert.equal(data.guest_id, "guest-kiki-0001");
+    assert.deepEqual(data.data.triggered_word, ["damn"]);
+  });
+
   it("POST /public → broadcast-channel announcement from a guest", async () => {
     const data = await publishAndReceive("/public", {
       guestName: "Grace Hopper",
@@ -204,6 +219,24 @@ describe("payloads are validated against a concrete schema per message type", ()
     const { status } = await post("/crab/order", {
       message: "Order placed",
       total: "not-a-number",
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects an unknown field on /cursed (400)", async () => {
+    const { status } = await post("/cursed", {
+      guest_id: "guest-kiki-0001",
+      message: "This damn parrot",
+      triggered_word: ["damn"],
+      extra: "nope",
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects a missing required field on /cursed (400)", async () => {
+    const { status } = await post("/cursed", {
+      message: "This damn parrot",
+      triggered_word: ["damn"],
     });
     assert.equal(status, 400);
   });

@@ -114,6 +114,29 @@ POST /beach/available
 
 ---
 
+## Parrot
+
+### Profanity Detected
+
+```http
+POST /cursed
+```
+
+Published by the Parrot service when a guest's chat message trips the profanity filter.
+Emits a public notification on the `parrot` channel.
+
+Payload:
+
+```json
+{
+  "guest_id": "guest-kiki-0001",
+  "message": "This damn parrot",
+  "triggered_word": ["damn"]
+}
+```
+
+---
+
 ## Public Announcements
 
 ```http
@@ -133,4 +156,5 @@ The service currently supports the following event types:
 | hotel.reservation_canceled            | Guest canceled hotel stay      |
 | beach.activity_full                   | Beach activity reached capacity|
 | beach.activity_available              | Beach activity available       |
+| parrot.cursed                         | Guest's chat message contained profanity |
 | public.announcement                   | Guest broadcast message        |
