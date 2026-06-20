@@ -20,12 +20,12 @@ export function removeClient(res: Response) {
 }
 
 export function broadcast(event: IslandEvent) {
+  // Emit a default (unnamed) `message` frame. A named `event:` line would only
+  // reach listeners that call addEventListener(<type>); the consumers use
+  // EventSource.onmessage, which fires solely for unnamed frames.
   clients.forEach((client) => {
-    client.write(
-      `event: ${event.type}\n` +
-      `data: ${JSON.stringify(event)}\n\n`
-    );
+    client.write(`data: ${JSON.stringify(event)}\n\n`);
   });
 
-  console.log("Broadcasted:", event.type);
+  console.log("Broadcasted:", event.event_type);
 }

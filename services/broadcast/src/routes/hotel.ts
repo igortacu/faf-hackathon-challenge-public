@@ -1,22 +1,23 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
 import { broadcast } from "../eventBus.js";
-import { EventType } from "../types.js";
+import { ChannelId, EventType } from "../types.js";
 
 
 const router = Router();
 
+// Hotel publishes: { type, payload: { message, reservation_id, guest_id, ... } }
 router.post("/confirm", (req, res) => {
-  const { body } = req.body;
+  const { payload } = req.body ?? {};
 
   broadcast({
     id: uuid(),
-    type: EventType.HOTEL_CONFIRM,
-    timestamp: new Date().toISOString(),
-    source: "hotel",
-    payload: {
-      body
-    },
+    channel: ChannelId.Hotel,
+    event_type: EventType.HOTEL_CONFIRM,
+    message: payload?.message ?? "",
+    sender: "hotel",
+    guest_id: payload?.guest_id,
+    data: payload,
   });
 
   res.json({
@@ -25,16 +26,16 @@ router.post("/confirm", (req, res) => {
 });
 
 router.post("/cancel", (req, res) => {
-  const { body } = req.body;
+  const { payload } = req.body ?? {};
 
   broadcast({
     id: uuid(),
-    type: EventType.HOTEL_CANCEL,
-    timestamp: new Date().toISOString(),
-    source: "hotel",
-    payload: {
-      body
-    },
+    channel: ChannelId.Hotel,
+    event_type: EventType.HOTEL_CANCEL,
+    message: payload?.message ?? "",
+    sender: "hotel",
+    guest_id: payload?.guest_id,
+    data: payload,
   });
 
   res.json({
