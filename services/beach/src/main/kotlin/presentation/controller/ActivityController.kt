@@ -11,6 +11,7 @@ import com.hackathon.summer.faf.domain.repository.ActivityRepository
 import com.hackathon.summer.faf.presentation.auth.AdminAuth
 import com.hackathon.summer.faf.presentation.request.CreateActivityRequest
 import com.hackathon.summer.faf.presentation.request.VisitorRequest
+import com.hackathon.summer.faf.presentation.response.ActivityByGuestResponse
 import com.hackathon.summer.faf.presentation.response.ActivityParticipantsResponse
 import com.hackathon.summer.faf.presentation.response.ActivityResponse
 import com.hackathon.summer.faf.presentation.response.ErrorResponse
@@ -117,6 +118,27 @@ class ActivityController(
                 description = activity.description,
                 capacity = activity.capacity,
                 remaining = activity.remaining()
+            )
+        )
+    }
+
+    suspend fun getActivityByGuest(call: ApplicationCall) {
+
+        val guestId = call.parameters["guest_id"]
+        if (guestId.isNullOrBlank()) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(VisitorErrors.VISITOR_MISSING_ID)
+            )
+            return
+        }
+
+        // A guest with no booking is a valid state, not an error: respond 200
+        // with a null activity_id so the frontend can clear its booked state.
+        call.respond(
+            HttpStatusCode.OK,
+            ActivityByGuestResponse(
+                activity_id = activityRepository.findActivityIdByVisitor(guestId)
             )
         )
     }

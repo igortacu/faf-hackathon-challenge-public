@@ -63,6 +63,17 @@ class PostgresActivityRepository : ActivityRepository {
         }
     }
 
+    override fun findActivityIdByVisitor(visitorId: String): String? {
+
+        return transaction {
+
+            ActivityBookingsTable
+                .select { ActivityBookingsTable.visitorId eq visitorId }
+                .map { it[ActivityBookingsTable.activityId] }
+                .firstOrNull()
+        }
+    }
+
     override fun save(activity: Activity) {
 
         transaction {

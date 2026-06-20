@@ -46,6 +46,10 @@ fun Route.activityRoutes(
             controller.getActivityParticipants(call)
         }
 
+        get("/by-guest/{guest_id}") {
+            controller.getActivityByGuest(call)
+        }
+
         get("/{activity_id}") {
             controller.getActivity(call)
         }

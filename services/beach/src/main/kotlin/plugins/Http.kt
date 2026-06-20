@@ -15,6 +15,11 @@ fun Application.configureHttp() {
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.Authorization)
+        // Required so POST bodies (Content-Type: application/json) and the
+        // admin/internal credentials are not rejected by CORS with a 403.
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader("X-Admin-Secret")
+        allowHeader("X-Internal-Key")
         allowHeader("MyCustomHeader")
         anyHost()
     }
