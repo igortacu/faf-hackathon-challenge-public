@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { env } from "@/config/env";
+import {
+  BEACH_ACTIVITY_EVENT_TYPES,
+  getBeachAvailabilityPayload,
+  parseIslandEventMessage,
+  updateActivitiesFromBeachEvent,
+} from "@/features/broadcast/lib/island-event";
+import { BEACH_KEYS } from "@/features/beach/query-keys";
+import type { ActivitiesResponse } from "@/features/beach/types";
 import { useEventsStore } from "@/stores/events-store";
 import { BroadcastEventSchema } from "@/types/broadcast";
+import type { BroadcastEvent } from "@/types/broadcast";
 import type { ConnectionStatus } from "@/types/broadcast";
 
 const BACKOFF_INITIAL_MS = 1_000;
@@ -11,6 +21,7 @@ const BACKOFF_MAX_MS = 30_000;
 const BROADCAST_PATH = "/api/broadcast/events";
 
 export function useBroadcast() {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<ConnectionStatus>(() => {
     if (!env.gatewayUrl) {
       console.warn(
@@ -42,20 +53,60 @@ export function useBroadcast() {
         setStatus("connected");
       };
 
-      es.onmessage = (e: MessageEvent) => {
+      const ingestBroadcastEvent = (event: BroadcastEvent) => {
+        useEventsStore
+          .getState()
+          .ingestEvent(event, { mirrorToResortWide: true });
+
+        const beachPayload = getBeachAvailabilityPayload(event);
+        if (!beachPayload) return;
+
+        let updatedCache = false;
+        queryClient.setQueryData<ActivitiesResponse>(
+          [...BEACH_KEYS.ACTIVITIES],
+          (current) => {
+            if (!current) return current;
+
+            updatedCache = true;
+            return {
+              ...current,
+              activities: updateActivitiesFromBeachEvent(
+                current.activities,
+                beachPayload
+              ),
+            };
+          }
+        );
+
+        if (!updatedCache) {
+          void queryClient.invalidateQueries({
+            queryKey: [...BEACH_KEYS.ACTIVITIES],
+          });
+        }
+      };
+
+      const handleMessage = (e: MessageEvent) => {
         try {
-          const parsed = BroadcastEventSchema.safeParse(
-            JSON.parse(e.data as string)
-          );
+          const rawData = e.data as string;
+          const islandEvent = parseIslandEventMessage(rawData);
+          if (islandEvent) {
+            ingestBroadcastEvent(islandEvent);
+            return;
+          }
+
+          const parsed = BroadcastEventSchema.safeParse(JSON.parse(rawData));
           if (parsed.success) {
-            useEventsStore
-              .getState()
-              .ingestEvent(parsed.data, { mirrorToResortWide: true });
+            ingestBroadcastEvent(parsed.data);
           }
         } catch {
           // malformed payload
         }
       };
+
+      es.onmessage = handleMessage;
+      BEACH_ACTIVITY_EVENT_TYPES.forEach((eventType) => {
+        es.addEventListener(eventType, handleMessage);
+      });
 
       es.onerror = () => {
         es.close();
@@ -75,8 +126,15 @@ export function useBroadcast() {
 
     connect();
 
-    // EventSource is closed automatically on unmount
-  }, []);
+    return () => {
+      activeRef.current = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      connectionRef.current?.close();
+      connectionRef.current = null;
+    };
+  }, [queryClient]);
 
   return { status };
 }
