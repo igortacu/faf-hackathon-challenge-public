@@ -64,7 +64,11 @@ function createJsonApi(basePath = "") {
   }
 
   return {
-    get: <T>(schema: ZodType<T>, url: string) => request(schema, { url }),
+    get: <T>(
+      schema: ZodType<T>,
+      url: string,
+      headers?: Record<string, string>
+    ) => request(schema, { url, headers }),
     post: <T>(
       schema: ZodType<T>,
       url: string,
