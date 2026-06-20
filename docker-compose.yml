@@ -7,17 +7,28 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init/01_create_databases.sql:/docker-entrypoint-initdb.d/01_create_databases.sql
-      - ./db/init/02_seed_beach.sql:/docker-entrypoint-initdb.d/02_seed_beach.sql
+      - ./db/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  db-init:
+    image: postgres:16-alpine
+    environment:
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGHOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "psql -tc \"SELECT 1 FROM pg_database WHERE datname='hotel'\" | grep -q 1 || psql -c 'CREATE DATABASE hotel;' && psql -tc \"SELECT 1 FROM pg_database WHERE datname='beach'\" | grep -q 1 || psql -c 'CREATE DATABASE beach;'"]
+
   broadcast:
     build: ./services/broadcast
-    env_file: .env
+    env_file: .env.example
     environment:
       PORT: "3002"
       CORS_ORIGIN: "*"
@@ -29,7 +40,7 @@ services:
 
   airport:
     build: ./services/airport
-    env_file: .env
+    env_file: .env.example
     environment:
       PORT: "3001"
       DATABASE_PATH: /data/airport.db
@@ -42,20 +53,20 @@ services:
 
   hotel:
     build: ./services/hotel
-    env_file: .env
+    env_file: .env.example
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hotel
       AIRPORT_SERVICE_URL: http://airport:3001
       BROADCAST_SERVICE_URL: http://broadcast:3002
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       broadcast:
         condition: service_started
 
   beach:
     build: ./services/beach
-    env_file: .env
+    env_file: .env.example
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -66,14 +77,14 @@ services:
       APP_PORT: "8080"
       BROADCAST_SERVICE_URL: http://broadcast:3002
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       broadcast:
         condition: service_started
 
   parrot:
     build: ./services/parrot
-    env_file: .env
+    env_file: .env.example
     environment:
       port: "3003"
       airport_service_url: http://airport:3001
@@ -86,7 +97,7 @@ services:
 
   parrot-b:
     build: ./services/parrot
-    env_file: .env
+    env_file: .env.example
     environment:
       port: "3003"
       airport_service_url: http://airport:3001
@@ -99,7 +110,7 @@ services:
 
   gateway:
     build: ./gateway
-    env_file: .env
+    env_file: .env.example
     environment:
       PORT: "8000"
       AIRPORT_SERVICE_URL: http://airport:3001
