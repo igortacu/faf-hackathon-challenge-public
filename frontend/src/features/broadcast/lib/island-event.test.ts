@@ -13,7 +13,6 @@ describe("normalizeIslandEvent", () => {
       normalizeIslandEvent({
         id: "event-1",
         type: "beach.activity_full",
-        timestamp: "2026-06-20T10:00:00.000Z",
         source: "beach",
         payload: {
           activityId: "ACT001",
@@ -42,7 +41,6 @@ describe("normalizeIslandEvent", () => {
       normalizeIslandEvent({
         id: "event-2",
         type: "beach.activity_available",
-        timestamp: "2026-06-20T10:01:00.000Z",
         source: "beach",
         payload: {
           activityId: "ACT001",
