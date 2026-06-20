@@ -47,46 +47,89 @@ class Gate:
         thread = threading.Thread(target=self._run, daemon=True)
         thread.start()
 
+    def _is_minor(self, guest: dict) -> bool:
+        return guest.get("age", 0) < 12
+
+    def _find_family(self, surname: str, exclude_idx: int | None = None) -> list[int]:
+        return [i for i, g in enumerate(self.queue)
+                if g.get("surname", "").lower() == surname.lower()
+                and i != exclude_idx]
+
+    def _pick_next(self) -> tuple[list[dict] | None, list[dict]]:
+        held = []
+        for idx, guest in enumerate(self.queue):
+            surname = guest.get("surname", "")
+            family_idxs = self._find_family(surname, exclude_idx=idx)
+
+            if self._is_minor(guest):
+                has_adult = any(not self._is_minor(self.queue[i]) for i in family_idxs)
+                if not has_adult:
+                    if guest.get("status") != "held":
+                        guest["status"] = "held"
+                        held.append(guest)
+                    continue
+
+            bundle = [guest]
+            pull_idxs = sorted([idx] + family_idxs, reverse=True)
+            for i in pull_idxs:
+                if i != idx:
+                    bundle.append(self.queue[i])
+            for i in pull_idxs:
+                self.queue.pop(i)
+
+            return bundle, held
+        return None, held
+
     def _run(self):
         while self.active:
-            guest = None
+            bundle = None
             with self.lock:
-                if self.queue:
-                    guest = self.queue.pop(0)
-                    guest["status"] = "processing"
-                    self.currently_processing = guest
+                bundle, newly_held = self._pick_next()
+                if bundle:
+                    for g in bundle:
+                        g["status"] = "processing"
+                    self.currently_processing = bundle[0]
 
-            if guest is None:
+            if newly_held:
+                with self.app.app_context():
+                    for g in newly_held:
+                        arrival = db.session.get(Arrival, g["arrival_id"])
+                        if arrival:
+                            arrival.status = "held"
+                    db.session.commit()
+
+            if bundle is None:
                 time.sleep(0.1)
                 continue
 
             with self.app.app_context():
-                arrival = db.session.get(Arrival, guest["arrival_id"])
-                if arrival:
-                    arrival.status = "processing"
-                    db.session.commit()
+                for g in bundle:
+                    arrival = db.session.get(Arrival, g["arrival_id"])
+                    if arrival:
+                        arrival.status = "processing"
+                db.session.commit()
 
             real_delay = self.processing_time / GAME_SPEED
-            started_at = game_now()
             time.sleep(real_delay)
 
             processed_at = game_now()
-            # wait_time_seconds is total time from entering the queue to being
-            # processed (processed_at - queued_at), not just processing time.
-            wait_time = processed_at - guest["queued_at"]
-            guest["status"] = "processed"
-            guest["processed_at"] = processed_at
-            guest["wait_time_seconds"] = wait_time
+            for g in bundle:
+                wait_time = processed_at - g["queued_at"]
+                g["status"] = "processed"
+                g["processed_at"] = processed_at
+                g["wait_time_seconds"] = wait_time
 
             with self.app.app_context():
-                arrival = db.session.get(Arrival, guest["arrival_id"])
-                if arrival:
-                    arrival.status = "processed"
-                    arrival.processed_at = processed_at
-                    arrival.wait_time_seconds = wait_time
-                    db.session.commit()
+                for g in bundle:
+                    arrival = db.session.get(Arrival, g["arrival_id"])
+                    if arrival:
+                        arrival.status = "processed"
+                        arrival.processed_at = g["processed_at"]
+                        arrival.wait_time_seconds = g["wait_time_seconds"]
+                db.session.commit()
 
-            self.broadcast.publish_event(guest)
+            for g in bundle:
+                self.broadcast.publish_event(g)
 
             with self.lock:
                 self.currently_processing = None
@@ -116,7 +159,7 @@ class GateManager:
     def _rehydrate_from_db(self):
         with self.app.app_context():
             rows = Arrival.query.filter(
-                Arrival.status.in_(["queued", "processing"])
+                Arrival.status.in_(["queued", "processing", "held"])
             ).order_by(Arrival.queued_at).all()
 
             for row in rows:

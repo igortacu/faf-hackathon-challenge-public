@@ -33,7 +33,7 @@ def register_routes(app):
             return jsonify({"error": "Guest not found"}), 404
 
         position = None
-        if guest["status"] in ("queued", "processing"):
+        if guest["status"] in ("queued", "processing", "held"):
             position = app.gate_manager.get_guest_position(guest_id, guest["gate"])
 
         if guest["status"] == "processed":
