@@ -122,6 +122,10 @@ private class InMemoryActivityRepository(
         activity.takeIf { it.id == id }
 
     override fun save(activity: Activity) = Unit
+
+    override fun create(activity: Activity): Boolean = false
+
+    override fun delete(id: String): Boolean = false
 }
 
 private class EmptyVisitorRepository : VisitorRepository {

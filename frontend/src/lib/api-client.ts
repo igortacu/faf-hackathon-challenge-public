@@ -71,8 +71,11 @@ function createJsonApi(basePath = "") {
       data: unknown,
       headers?: Record<string, string>
     ) => request(schema, { url, method: "POST", data, headers }),
-    delete: <T>(schema: ZodType<T>, url: string) =>
-      request(schema, { url, method: "DELETE" }),
+    delete: <T>(
+      schema: ZodType<T>,
+      url: string,
+      headers?: Record<string, string>
+    ) => request(schema, { url, method: "DELETE", headers }),
   };
 }
 

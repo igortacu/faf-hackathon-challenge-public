@@ -16,4 +16,16 @@ object ActivityErrors {
 
     const val MISSING_ACTIVITY_ID =
         "Missing activity id"
+
+    const val ACTIVITY_ALREADY_EXISTS =
+        "Activity with this id already exists"
+
+    const val MISSING_ACTIVITY_NAME =
+        "Missing activity name"
+
+    const val INVALID_CAPACITY =
+        "Capacity must be greater than zero"
+
+    const val UNAUTHORIZED =
+        "Admin or internal authentication required"
 }

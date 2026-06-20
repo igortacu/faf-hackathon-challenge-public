@@ -18,12 +18,20 @@ fun Route.activityRoutes(
     }
     route("/activity") {
 
+        post {
+            controller.create(call)
+        }
+
         post("/book/{activity_id}") {
             controller.book(call)
         }
 
         post("/cancel/{activity_id}") {
             controller.cancel(call)
+        }
+
+        delete("/{activity_id}") {
+            controller.remove(call)
         }
 
         get("/{activity_id}") {
