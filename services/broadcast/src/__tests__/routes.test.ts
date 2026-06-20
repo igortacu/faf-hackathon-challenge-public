@@ -6,10 +6,14 @@ import type { AddressInfo } from "node:net";
 import { createApp } from "../app.js";
 import { SseClient } from "./sse-client.js";
 
+const ADMIN_PASSCODE = "test-passcode";
+
 let server: http.Server;
 let port: number;
 
 before(async () => {
+  // Admin routes fail closed unless ADMIN_PASSCODE is configured.
+  process.env.ADMIN_PASSCODE = ADMIN_PASSCODE;
   server = http.createServer(createApp());
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   port = (server.address() as AddressInfo).port;
@@ -19,10 +23,14 @@ after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-async function post(path: string, body: unknown) {
+async function post(
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {}
+) {
   const res = await fetch(`http://127.0.0.1:${port}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
   const json = await res.json();
@@ -30,10 +38,14 @@ async function post(path: string, body: unknown) {
 }
 
 /** Connects a listener, posts one event, and returns the first frame it receives. */
-async function publishAndReceive(path: string, body: unknown) {
+async function publishAndReceive(
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {}
+) {
   const client = await SseClient.connect(port);
   try {
-    const { status, json } = await post(path, body);
+    const { status, json } = await post(path, body, headers);
     assert.equal(status, 200, `${path} should respond 200`);
     assert.deepEqual(json, { success: true }, `${path} should ack { success: true }`);
 
@@ -50,33 +62,32 @@ async function publishAndReceive(path: string, body: unknown) {
 }
 
 describe("broadcast routes deliver to the listener", () => {
-  it("POST /airport/arrival → airport channel, normalized guest", async () => {
+  it("POST /airport/arrival → airport channel, spreads extras into data", async () => {
     const data = await publishAndReceive("/airport/arrival", {
-      channel: "resort-wide",
       message: "Ada Lovelace arrived",
-      sender: "airport-service",
-      data: { guest_id: "g-1", name: "Ada", surname: "Lovelace", gate: "EU-1" },
+      guest_id: "g-1",
+      guest_name: "Ada Lovelace",
+      gate: "EU-1",
+      passport_type: "EU",
     });
 
     assert.equal(data.channel, "airport");
     assert.equal(data.event_type, "airport.arrival");
     assert.equal(data.message, "Ada Lovelace arrived");
-    assert.equal(data.sender, "airport-service");
+    assert.equal(data.sender, "airport");
     assert.equal(data.guest_id, "g-1");
     assert.equal(data.guest_name, "Ada Lovelace");
     assert.equal(data.data.gate, "EU-1");
+    assert.equal(data.data.passport_type, "EU");
     assert.ok(typeof data.id === "string" && data.id.length > 0);
   });
 
-  it("POST /hotel/confirm → hotel channel from { type, payload }", async () => {
+  it("POST /hotel/confirm → hotel channel, confirmation event", async () => {
     const data = await publishAndReceive("/hotel/confirm", {
-      type: "hotel.reservation_confirmed",
-      payload: {
-        message: "Room confirmed",
-        reservation_id: "r-9",
-        guest_id: "g-2",
-        room_type: "SUITE",
-      },
+      message: "Room confirmed",
+      guest_id: "g-2",
+      reservation_id: "r-9",
+      room_type: "SUITE",
     });
 
     assert.equal(data.channel, "hotel");
@@ -89,8 +100,8 @@ describe("broadcast routes deliver to the listener", () => {
 
   it("POST /hotel/cancel → cancellation event", async () => {
     const data = await publishAndReceive("/hotel/cancel", {
-      type: "hotel.reservation_cancelled",
-      payload: { message: "Booking cancelled", guest_id: "g-3" },
+      message: "Booking cancelled",
+      guest_id: "g-3",
     });
 
     assert.equal(data.channel, "hotel");
@@ -102,40 +113,39 @@ describe("broadcast routes deliver to the listener", () => {
   it("POST /beach/full → beach.activity_full", async () => {
     const data = await publishAndReceive("/beach/full", {
       message: "Surfing is full",
-      sender: "beach",
-      data: { guest_id: "g-4", activity: "surfing" },
+      guest_id: "g-4",
+      activity: "surfing",
     });
 
     assert.equal(data.channel, "beach");
     assert.equal(data.event_type, "beach.activity_full");
     assert.equal(data.message, "Surfing is full");
     assert.equal(data.guest_id, "g-4");
+    assert.equal(data.data.activity, "surfing");
   });
 
   it("POST /beach/available → beach.activity_available (not _full)", async () => {
     const data = await publishAndReceive("/beach/available", {
       message: "Surfing has a free slot",
-      sender: "beach",
-      data: { activity: "surfing" },
+      activity: "surfing",
     });
 
     assert.equal(data.channel, "beach");
-    // Regression: this route previously emitted beach.activity_full.
+    // Regression: the merge had this route emitting beach.activity_full.
     assert.equal(data.event_type, "beach.activity_available");
     assert.equal(data.message, "Surfing has a free slot");
   });
 
-  it("POST /public → resort-wide announcement from a guest", async () => {
+  it("POST /public → broadcast-channel announcement from a guest", async () => {
     const data = await publishAndReceive("/public", {
       guestName: "Grace Hopper",
       message: "Lost compiler near the pier",
     });
 
-    assert.equal(data.channel, "resort-wide");
+    assert.equal(data.channel, "broadcast");
     assert.equal(data.event_type, "public.announcement");
     assert.equal(data.message, "Lost compiler near the pier");
     assert.equal(data.sender, "Grace Hopper");
-    assert.equal(data.guest_name, "Grace Hopper");
   });
 
   it("fans a single event out to multiple connected listeners", async () => {
@@ -153,5 +163,46 @@ describe("broadcast routes deliver to the listener", () => {
       a.close();
       b.close();
     }
+  });
+});
+
+describe("admin announcement route is admin-only", () => {
+  it("rejects a request without the admin passcode (401)", async () => {
+    const { status, json } = await post("/admin/announcement", {
+      message: "Storm warning",
+    });
+    assert.equal(status, 401);
+    assert.equal(json.error, "Admin authentication required");
+  });
+
+  it("rejects a wrong passcode (401)", async () => {
+    const { status } = await post(
+      "/admin/announcement",
+      { message: "Storm warning" },
+      { "X-Admin-Passcode": "wrong" }
+    );
+    assert.equal(status, 401);
+  });
+
+  it("validates that message is required (400)", async () => {
+    const { status } = await post(
+      "/admin/announcement",
+      { sender: "Admin" },
+      { "X-Admin-Passcode": ADMIN_PASSCODE }
+    );
+    assert.equal(status, 400);
+  });
+
+  it("broadcasts a resort-wide admin announcement with a valid passcode", async () => {
+    const data = await publishAndReceive(
+      "/admin/announcement",
+      { message: "Beach closes at 6pm", sender: "Lifeguard" },
+      { "X-Admin-Passcode": ADMIN_PASSCODE }
+    );
+
+    assert.equal(data.channel, "resort-wide");
+    assert.equal(data.event_type, "admin.announcement");
+    assert.equal(data.message, "Beach closes at 6pm");
+    assert.equal(data.sender, "Lifeguard");
   });
 });
