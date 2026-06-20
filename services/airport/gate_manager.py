@@ -216,7 +216,7 @@ class GateManager:
                     queue_snapshot.append({**cp, "position": 0, "wait_time_seconds": now - cp["queued_at"]})
                 for i, g in enumerate(gate.queue):
                     queue_snapshot.append({**g, "position": i + 1, "wait_time_seconds": now - g["queued_at"]})
-                total_queued += len(gate.queue)
+                total_queued += len(queue_snapshot)
             gates_list.append({
                 "gate_id": gate.gate_id,
                 "gate_type": gate.gate_type,
