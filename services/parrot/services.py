@@ -1,8 +1,11 @@
 import asyncio
 import json
+import logging
 import httpx
 from config import settings
 from tracing import request_id_ctx
+
+logger = logging.getLogger(__name__)
 
 TIMEOUT = 5.0
 
@@ -92,3 +95,18 @@ async def get_guest_journey_status(guest_id: str) -> str:
         _leg(f"{settings.hotel_service_url}/reservation/by-guest/{guest_id}"),
     )
     return json.dumps({"guest_id": guest_id, "arrival": arrival, "reservation": reservation})
+
+
+async def notify_cursed(guest_id: str, message: str, triggered_words: list[str]) -> None:
+    """Publish a public notification to the broadcast (lighthouse) service when a
+    guest's chat message trips the profanity filter. Fire-and-forget: a broadcast
+    outage never affects the chat response."""
+    try:
+        r = await _get_client().post(
+            f"{settings.broadcast_service_url}/cursed",
+            json={"guest_id": guest_id, "message": message, "triggered_word": triggered_words},
+            headers=_hdrs(),
+        )
+        r.raise_for_status()
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError):
+        logger.warning("Failed to notify broadcast of profanity for guest_id=%s", guest_id)

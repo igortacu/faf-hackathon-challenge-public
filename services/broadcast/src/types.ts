@@ -10,6 +10,8 @@ export enum EventType {
   CRAB_ORDER_PLACED = "crab.order_placed",
   CRAB_SOLD_OUT = "crab.sold_out",
 
+  PARROT_CURSED = "parrot.cursed",
+
   PUBLIC_ANNOUNCEMENT = "public.announcement",
 
   ADMIN_ANNOUNCEMENT = "admin.announcement",

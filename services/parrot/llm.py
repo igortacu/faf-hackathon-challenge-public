@@ -1,10 +1,12 @@
+import asyncio
 import json
 import logging
 import time
 from typing import TYPE_CHECKING
 from openai import AsyncOpenAI
 from config import settings
-from profanity import mask_profanity
+from profanity import find_profane_words, mask_profanity
+from services import notify_cursed
 from tools import TOOL_SCHEMAS, GUEST_TOOL_SCHEMAS, execute_tool
 from tracing import request_id_ctx
 
@@ -96,6 +98,10 @@ def _assemble(
         system_prompt += f"\nThe current guest's ID is: {guest_id}\n"
 
     filtered, was_censored = mask_profanity(message)
+    if was_censored and guest_id:
+        # Public "cursed" notification needs a guest to attribute it to — anonymous
+        # chats are masked the same way but never reported to the broadcast service.
+        asyncio.create_task(notify_cursed(guest_id, message, find_profane_words(message)))
     user_msg = {"role": "user", "content": filtered, "censored": was_censored}
     messages = [{"role": "system", "content": system_prompt}]
     if history:

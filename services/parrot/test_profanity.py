@@ -10,7 +10,7 @@ import unittest
 # Pin the stop list so the tests don't depend on the deployed PROFANITY_WORDS.
 os.environ["PROFANITY_WORDS"] = "ass,crap,damn,hell,piss,shit,bastard"
 
-from profanity import mask_profanity  # noqa: E402
+from profanity import find_profane_words, mask_profanity  # noqa: E402
 
 
 class LeavesInnocentTextUntouched(unittest.TestCase):
@@ -92,6 +92,32 @@ class Contract(unittest.TestCase):
     def test_empty_and_none(self):
         self.assertEqual(mask_profanity(""), ("", False))
         self.assertEqual(mask_profanity(None), (None, False))
+
+
+class FindProfaneWords(unittest.TestCase):
+    """find_profane_words reports which word(s) tripped the filter, normalised."""
+
+    def test_single_word(self):
+        self.assertEqual(find_profane_words("This damn parrot"), ["damn"])
+
+    def test_no_match(self):
+        self.assertEqual(find_profane_words("Where is my passport?"), [])
+
+    def test_multiple_words_in_order(self):
+        self.assertEqual(find_profane_words("damn, this is such crap"), ["damn", "crap"])
+
+    def test_leetspeak_normalised_to_canonical_form(self):
+        self.assertEqual(find_profane_words("sh1t happens"), ["shit"])
+
+    def test_agrees_with_mask_profanity(self):
+        for text in ["damn", "hello", "Shit!", "a$$", "passport"]:
+            with self.subTest(text=text):
+                _, was_masked = mask_profanity(text)
+                self.assertEqual(bool(find_profane_words(text)), was_masked)
+
+    def test_empty_and_none(self):
+        self.assertEqual(find_profane_words(""), [])
+        self.assertEqual(find_profane_words(None), [])
 
 
 if __name__ == "__main__":
