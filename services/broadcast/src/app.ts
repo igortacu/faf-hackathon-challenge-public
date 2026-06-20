@@ -1,0 +1,23 @@
+import express, { Express } from "express";
+
+import airportRoutes from "./routes/airport.js";
+import hotelRoutes from "./routes/hotel.js";
+import beachRoutes from "./routes/beach.js";
+import publicRoutes from "./routes/public.js";
+import eventRoutes from "./routes/events.js";
+
+// Builds the Express app with all routes wired. Kept separate from server.ts
+// so tests can mount the app without binding a fixed port.
+export function createApp(): Express {
+  const app = express();
+
+  app.use(express.json());
+
+  app.use("/events/", eventRoutes);
+  app.use("/airport/", airportRoutes);
+  app.use("/hotel/", hotelRoutes);
+  app.use("/beach/", beachRoutes);
+  app.use("/public/", publicRoutes);
+
+  return app;
+}

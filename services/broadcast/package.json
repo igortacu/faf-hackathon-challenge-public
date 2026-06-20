@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --import tsx --test src/__tests__/*.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -2,6 +2,7 @@ package com.hackathon.summer.faf.plugins
 
 import com.hackathon.summer.faf.application.usecase.BookActivityUseCase
 import com.hackathon.summer.faf.application.usecase.CancelActivityUseCase
+import com.hackathon.summer.faf.infrastructure.broadcast.HttpActivityBroadcastPublisher
 import com.hackathon.summer.faf.infrastructure.repository.PostgresActivityRepository
 import com.hackathon.summer.faf.infrastructure.repository.PostgresVisitorRepository
 import com.hackathon.summer.faf.presentation.controller.ActivityController
@@ -13,9 +14,13 @@ fun Application.configureRouting() {
 
     val activityRepository = PostgresActivityRepository()
     val visitorRepository = PostgresVisitorRepository()
-    val bookUseCase = BookActivityUseCase(activityRepository, visitorRepository)
+    val broadcastPublisher = HttpActivityBroadcastPublisher(
+        broadcastServiceUrl = System.getenv("BROADCAST_SERVICE_URL"),
+        internalSecret = System.getenv("INTERNAL_SECRET")
+    )
+    val bookUseCase = BookActivityUseCase(activityRepository, visitorRepository, broadcastPublisher)
 
-    val cancelUseCase = CancelActivityUseCase(activityRepository)
+    val cancelUseCase = CancelActivityUseCase(activityRepository, broadcastPublisher)
 
     val controller = ActivityController(activityRepository, bookUseCase, cancelUseCase)
 

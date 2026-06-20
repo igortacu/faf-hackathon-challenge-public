@@ -20,12 +20,12 @@ export function removeClient(res: Response) {
 }
 
 export function broadcast(event: IslandEvent) {
+  // No `event:` line — a named SSE event only fires addEventListener(name, ...)
+  // handlers, never the browser's default EventSource.onmessage, which is what
+  // every consumer here actually uses.
   clients.forEach((client) => {
-    client.write(
-      `event: ${event.type}\n` +
-      `data: ${JSON.stringify(event)}\n\n`
-    );
+    client.write(`data: ${JSON.stringify(event)}\n\n`);
   });
 
-  console.log("Broadcasted:", event.type);
+  console.log("Broadcasted:", event.event_type);
 }
