@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     airport_service_url: str = "http://localhost:3001"
     hotel_service_url: str = "http://localhost:3000"
+    crab_service_url: str = "http://localhost:3004"
     internal_secret: str = ""
 
     # Admin endpoints require this passcode via the X-Admin-Passcode header.

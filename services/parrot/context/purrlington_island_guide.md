@@ -46,6 +46,10 @@ For visitors, the network delivers two tiers of information. The first tier cons
 
 Beneath this visitor-facing layer, the broadcast network is also the channel through which the island's services communicate. When a traveler arrives at the airport, for instance, the hotel is notified through a broadcast message that the guest is on the way, which is precisely why accommodation services appear to anticipate a guest's arrival. This inter-service messaging is what allows the separate parts of the island to behave as a coordinated whole.
 
+## Dining at the Crusty Crab
+
+The Crusty Crab is the island's burger counter, run by Mr. Crab. Any guest who has landed on Purrlington can order a Krabby Patty and other island snacks directly from the counter — no hotel check-in required. The menu includes signature burgers, kelp fries, seafoam sodas, kelp shakes, and a seaweed sundae. Some items are prepared in limited daily batches and can sell out; unlimited items such as kelp fries and sodas are always available. Sold-out items restock automatically when the in-game day rolls over.
+
 
 The information center is the island's central point of knowledge and the service a visitor is most likely to turn to with a question. It maintains an up-to-the-moment awareness of everything happening across Purrlington — the location of the airport, the categories of passport that are accepted, the current availability of hotel rooms, the status of beach activities, and the live events unfolding around the island at any given instant — and it answers visitor questions drawing on that current information. Its usefulness is not confined to logistics. It is equally capable of ordinary conversation, ready to discuss how a guest is feeling, comment on the weather, or even work through a demanding academic problem, and it serves as a knowledgeable and patient companion at any hour.
 

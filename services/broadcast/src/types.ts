@@ -7,6 +7,9 @@ export enum EventType {
   BEACH_FULL = "beach.activity_full",
   BEACH_AVAILABLE = "beach.activity_available",
 
+  CRAB_ORDER_PLACED = "crab.order_placed",
+  CRAB_SOLD_OUT = "crab.sold_out",
+
   PUBLIC_ANNOUNCEMENT = "public.announcement",
 
   ADMIN_ANNOUNCEMENT = "admin.announcement",
@@ -20,6 +23,7 @@ export enum ChannelId {
   Airport = "airport",
   Hotel = "hotel",
   Beach = "beach",
+  Crab = "crab",
   Parrot = "parrot",
   Broadcast = "broadcast",
   ResortWide = "resort-wide",

@@ -2,6 +2,7 @@ import { ZonePanelShell } from "@/features/map/components/zone-panel-shell";
 import { AirportPanel } from "@/features/airport/components/airport-panel";
 import { HotelPanel } from "@/features/hotel/components/hotel-panel";
 import { BeachPanel } from "@/features/beach/components/beach-panel";
+import { CrabPanel } from "@/features/crab/components/crab-panel";
 import { ParrotPanel } from "@/features/parrot/components/parrot-panel";
 import { BroadcastPanel } from "@/features/broadcast/components/broadcast-panel";
 import { ZoneId } from "@/features/map/constants";
@@ -20,6 +21,8 @@ function ZonePanelContent({ zoneId }: { zoneId: ZoneId }) {
       return <HotelPanel />;
     case ZoneId.Beach:
       return <BeachPanel />;
+    case ZoneId.Crab:
+      return <CrabPanel />;
     case ZoneId.Parrot:
       return <ParrotPanel />;
     case ZoneId.Broadcast:
