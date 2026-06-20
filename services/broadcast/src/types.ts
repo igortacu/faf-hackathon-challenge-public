@@ -1,12 +1,3 @@
-export enum ChannelId {
-  Airport = "airport",
-  Hotel = "hotel",
-  Beach = "beach",
-  Parrot = "parrot",
-  Broadcast = "broadcast",
-  ResortWide = "resort-wide",
-}
-
 export enum EventType {
   AIRPORT_ARRIVAL = "airport.arrival",
 

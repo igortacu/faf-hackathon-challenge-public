@@ -5,18 +5,6 @@ import { ChannelId, EventType } from "../types.js";
 
 const router = Router();
 
-// Beach may publish either { channel, message, sender, data } or { type, payload }.
-function normalize(req: { body?: any }) {
-  const { message, sender, data, payload } = req.body ?? {};
-  const detail = data ?? payload ?? undefined;
-  return {
-    message: message ?? detail?.message ?? "",
-    sender: sender ?? "beach",
-    guest_id: detail?.guest_id,
-    data: detail,
-  };
-}
-
 router.post("/full", (req, res) => {
   const { message, guest_id, guest_name, ...data } = req.body;
 
@@ -42,7 +30,7 @@ router.post("/available", (req, res) => {
   broadcast({
     id: uuid(),
     channel: ChannelId.Beach,
-    event_type: EventType.BEACH_FULL,
+    event_type: EventType.BEACH_AVAILABLE,
     message: message ?? "A beach activity has availability.",
     sender: "beach",
     guest_id,
