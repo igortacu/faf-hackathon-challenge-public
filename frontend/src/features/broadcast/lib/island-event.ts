@@ -6,6 +6,7 @@ interface IslandEvent {
   id: string;
   type: string;
   source: string;
+  timestamp?: string;
   payload?: unknown;
 }
 
