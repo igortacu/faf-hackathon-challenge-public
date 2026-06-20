@@ -7,13 +7,24 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init/01_create_databases.sql:/docker-entrypoint-initdb.d/01_create_databases.sql
-      - ./db/init/02_seed_beach.sql:/docker-entrypoint-initdb.d/02_seed_beach.sql
+      - ./db/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  db-init:
+    image: postgres:16-alpine
+    environment:
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGHOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "psql -tc \"SELECT 1 FROM pg_database WHERE datname='hotel'\" | grep -q 1 || psql -c 'CREATE DATABASE hotel;' && psql -tc \"SELECT 1 FROM pg_database WHERE datname='beach'\" | grep -q 1 || psql -c 'CREATE DATABASE beach;'"]
 
   broadcast:
     build: ./services/broadcast
@@ -48,8 +59,8 @@ services:
       AIRPORT_SERVICE_URL: http://airport:3001
       BROADCAST_SERVICE_URL: http://broadcast:3002
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       broadcast:
         condition: service_started
 
@@ -66,8 +77,8 @@ services:
       APP_PORT: "8080"
       BROADCAST_SERVICE_URL: http://broadcast:3002
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       broadcast:
         condition: service_started
 
