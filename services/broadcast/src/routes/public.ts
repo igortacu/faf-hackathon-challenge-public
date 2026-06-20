@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
 import { broadcast } from "../eventBus.js";
-import { EventType } from "../types.js";
+import { ChannelId, EventType } from "../types.js";
 
 const router = Router();
 
@@ -10,12 +10,10 @@ router.post("/", (req, res) => {
 
   broadcast({
     id: uuid(),
-    type: EventType.PUBLIC_ANNOUNCEMENT,
-    timestamp: new Date().toISOString(),
-    source: guestName,
-    payload: {
-      message,
-    },
+    channel: ChannelId.Broadcast,
+    event_type: EventType.PUBLIC_ANNOUNCEMENT,
+    message,
+    sender: guestName,
   });
 
   res.json({

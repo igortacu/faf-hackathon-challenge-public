@@ -1,5 +1,5 @@
 import { useSessionStore } from "@/stores/session-store";
-import type { AppSession, GuestSession } from "@/stores/session-store";
+import type { AdminSession, AppSession, GuestSession } from "@/stores/session-store";
 import type { GuestProfile } from "@/types/guest";
 
 export function useSession(): AppSession | null {
@@ -17,6 +17,12 @@ export function useIsAdmin(): boolean {
 export function useGuestSession(): GuestSession | null {
   return useSessionStore((state) =>
     state.session?.role === "guest" ? state.session : null
+  );
+}
+
+export function useAdminSession(): AdminSession | null {
+  return useSessionStore((state) =>
+    state.session?.role === "admin" ? state.session : null
   );
 }
 
