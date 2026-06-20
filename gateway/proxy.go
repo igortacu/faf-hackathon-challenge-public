@@ -20,6 +20,20 @@ func ProxyRoute(target string) func(chi.Router) {
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
+	// Strip CORS headers set by backends (e.g. beach installs Ktor CORS with
+	// anyHost() -> "Access-Control-Allow-Origin: *"). The gateway is the single
+	// public origin and sets CORS itself in CORSMiddleware; letting an upstream
+	// value through produces a duplicate ACAO ("<origin>, *"), which browsers
+	// reject. Remove all CORS response headers here so only the gateway's apply.
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		for h := range resp.Header {
+			if strings.HasPrefix(strings.ToLower(h), "access-control-") {
+				resp.Header.Del(h)
+			}
+		}
+		return nil
+	}
+
 	// Custom error handler — return 502 if backend is unreachable
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		log.Printf("Proxy error for %s: %v", r.URL.Path, err)
