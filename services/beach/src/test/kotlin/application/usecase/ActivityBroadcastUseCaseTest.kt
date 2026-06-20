@@ -126,6 +126,8 @@ private class InMemoryActivityRepository(
 
 private class EmptyVisitorRepository : VisitorRepository {
     override fun findById(id: String): Visitor? = null
+
+    override fun markCheckedIn(id: String) = Unit
 }
 
 private class RecordingActivityBroadcastPublisher : ActivityBroadcastPublisher {
