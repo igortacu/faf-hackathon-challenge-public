@@ -93,6 +93,20 @@ services:
       broadcast:
         condition: service_started
 
+  goat-farm:
+    build: ./services/goat-farm
+    env_file: .env.example
+    environment:
+      PORT: "3005"
+      SIMULATION_START_TIME: ${VITE_SIMULATION_START_TIME:-2026-06-20T00:00:00Z}
+      GAME_SPEED: ${VITE_GAME_SPEED:-300}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3005/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   beach:
     build: ./services/beach
     env_file: .env
@@ -168,6 +182,7 @@ services:
       HOTEL_SERVICE_URL: http://hotel:3000
       BEACH_SERVICE_URL: http://beach:8080
       CRAB_SERVICE_URL: http://crab:3004
+      GOAT_FARM_SERVICE_URL: http://goat-farm:3005
       BROADCAST_SERVICE_URL: http://broadcast:3002
       PARROT_SERVICE_URL: http://parrot:3003,http://parrot-b:3003
       CORS_ALLOWED_ORIGINS: "*"
@@ -188,6 +203,8 @@ services:
       beach:
         condition: service_started
       crab:
+        condition: service_started
+      goat-farm:
         condition: service_started
       broadcast:
         condition: service_started
