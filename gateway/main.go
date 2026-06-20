@@ -39,6 +39,7 @@ func main() {
 		"/api/airport":   cfg.AirportServicePool,
 		"/api/hotel":     cfg.HotelServicePool,
 		"/api/beach":     cfg.BeachServicePool,
+		"/api/crab":      cfg.CrabServicePool,
 		"/api/broadcast": cfg.BroadcastServicePool,
 		"/api/parrot":    cfg.ParrotServicePool,
 	}

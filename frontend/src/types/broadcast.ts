@@ -4,6 +4,7 @@ export enum ChannelId {
   Airport = "airport",
   Hotel = "hotel",
   Beach = "beach",
+  Crab = "crab",
   Parrot = "parrot",
   Broadcast = "broadcast",
   ResortWide = "resort-wide",

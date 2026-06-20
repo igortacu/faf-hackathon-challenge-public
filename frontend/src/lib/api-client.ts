@@ -79,6 +79,7 @@ function createJsonApi(basePath = "") {
 export const api = {
   airport: createJsonApi("/api/airport"),
   beach: createJsonApi("/api/beach"),
+  crab: createJsonApi("/api/crab"),
   hotel: createJsonApi("/api/hotel"),
   parrot: createJsonApi("/api/parrot"),
   broadcast: createJsonApi("/api/broadcast"),

@@ -50,6 +50,12 @@ async def get_hotel_rooms() -> str:
     return json.dumps(r.json())
 
 
+async def get_crab_menu() -> str:
+    r = await _get_client().get(f"{settings.crab_service_url}/menu", headers=_hdrs())
+    r.raise_for_status()
+    return json.dumps(r.json())
+
+
 async def get_guest_arrival_status(guest_id: str) -> str:
     r = await _get_client().get(f"{settings.airport_service_url}/arrivals/{guest_id}", headers=_hdrs())
     r.raise_for_status()

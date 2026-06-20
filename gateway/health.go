@@ -18,6 +18,7 @@ func HealthHandler(cfg Config) http.HandlerFunc {
 		"airport":   cfg.AirportServiceURL,
 		"hotel":     cfg.HotelServiceURL,
 		"beach":     cfg.BeachServiceURL,
+		"crab":      cfg.CrabServiceURL,
 		"broadcast": cfg.BroadcastServiceURL,
 		"parrot":    cfg.ParrotServiceURL,
 	}
