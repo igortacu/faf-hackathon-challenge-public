@@ -166,6 +166,65 @@ describe("broadcast routes deliver to the listener", () => {
   });
 });
 
+describe("payloads are validated against a concrete schema per message type", () => {
+  it("rejects an unknown field on /airport/arrival (400)", async () => {
+    const { status, json } = await post("/airport/arrival", {
+      message: "Ada Lovelace arrived",
+      not_a_real_field: "should be rejected",
+    });
+    assert.equal(status, 400);
+    assert.equal(json.error, "Invalid payload");
+  });
+
+  it("rejects an unknown field on /hotel/confirm (400)", async () => {
+    const { status } = await post("/hotel/confirm", {
+      message: "Room confirmed",
+      totally_made_up: 123,
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects an unknown field on /beach/full (400)", async () => {
+    const { status } = await post("/beach/full", {
+      message: "Surfing is full",
+      wildcard: { anything: "goes" },
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects an unknown field on /crab/order (400)", async () => {
+    const { status } = await post("/crab/order", {
+      message: "Order placed",
+      extra: "nope",
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects a wrong-typed field on /crab/order (400)", async () => {
+    const { status } = await post("/crab/order", {
+      message: "Order placed",
+      total: "not-a-number",
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects an unknown field on /public (400)", async () => {
+    const { status } = await post("/public", {
+      guestName: "Grace Hopper",
+      message: "Lost compiler near the pier",
+      extra: "nope",
+    });
+    assert.equal(status, 400);
+  });
+
+  it("rejects a missing required field on /public (400)", async () => {
+    const { status } = await post("/public", {
+      guestName: "Grace Hopper",
+    });
+    assert.equal(status, 400);
+  });
+});
+
 describe("admin announcement route is admin-only", () => {
   it("rejects a request without the admin passcode (401)", async () => {
     const { status, json } = await post("/admin/announcement", {
@@ -188,6 +247,15 @@ describe("admin announcement route is admin-only", () => {
     const { status } = await post(
       "/admin/announcement",
       { sender: "Admin" },
+      { "X-Admin-Passcode": ADMIN_PASSCODE }
+    );
+    assert.equal(status, 400);
+  });
+
+  it("rejects an unknown field even with a valid passcode (400)", async () => {
+    const { status } = await post(
+      "/admin/announcement",
+      { message: "Storm warning", channel: "should-not-be-settable" },
       { "X-Admin-Passcode": ADMIN_PASSCODE }
     );
     assert.equal(status, 400);

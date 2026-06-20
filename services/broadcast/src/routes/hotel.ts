@@ -1,14 +1,19 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
 import { broadcast } from "../eventBus.js";
+import { HotelEventSchema } from "../schemas.js";
 import { ChannelId, EventType } from "../types.js";
+import { parseBody } from "../validate.js";
 
 
 const router = Router();
 
-// Hotel publishes: { type, payload: { message, reservation_id, guest_id, ... } }
+// Hotel publishes: { message, guest_id, guest_name, reservation_id, room_type, ... }
 router.post("/confirm", (req, res) => {
-  const { message, guest_id, guest_name, ...data } = req.body;
+  const body = parseBody(HotelEventSchema, req, res);
+  if (!body) return;
+
+  const { message, guest_id, guest_name, ...data } = body;
 
   broadcast({
     id: uuid(),
@@ -27,7 +32,10 @@ router.post("/confirm", (req, res) => {
 });
 
 router.post("/cancel", (req, res) => {
-  const { message, guest_id, guest_name, ...data } = req.body;
+  const body = parseBody(HotelEventSchema, req, res);
+  if (!body) return;
+
+  const { message, guest_id, guest_name, ...data } = body;
 
   broadcast({
     id: uuid(),
