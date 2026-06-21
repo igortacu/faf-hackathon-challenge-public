@@ -1,14 +1,9 @@
-export const BURGER_PRICE_MEOWS = 100;
-export const ORACLE_REWARD_MEOWS = 100;
-
-export function rewardForOracleResult(passed: boolean) {
-  return passed ? ORACLE_REWARD_MEOWS : 0;
-}
-
-export function canBuyBurger(meows: number) {
-  return meows >= BURGER_PRICE_MEOWS;
-}
-
-export function spendBurgerMeows(meows: number) {
-  return canBuyBurger(meows) ? meows - BURGER_PRICE_MEOWS : meows;
-}
+// The burger flow's rules now live in the shared meow wallet. This module is
+// kept as a thin re-export so older imports (and tests) stay valid.
+export {
+  BURGER_PRICE_MEOWS,
+  ORACLE_REWARD_MEOWS,
+  canBuyBurger,
+  rewardForOracleResult,
+  spendBurgerMeows,
+} from "@/features/kiki-burger-quest/lib/kiki-wallet";
