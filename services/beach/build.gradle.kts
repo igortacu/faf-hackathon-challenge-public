@@ -33,6 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-core-jvm:2.3.12")
     implementation("io.ktor:ktor-server-cors-jvm:2.3.12")
+    implementation("io.ktor:ktor-server-call-id-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
     implementation("io.ktor:ktor-server-openapi-jvm:2.3.12")
     implementation("io.ktor:ktor-server-swagger-jvm:2.3.12")

@@ -114,9 +114,9 @@ Overall status is `"healthy"` when all backends are healthy, `"degraded"` when a
 
 Applied globally in this order:
 
-1. **RequestID** — assigns a unique request ID (`X-Request-Id` header)
+1. **RequestID** — assigns a unique request ID (reused from an inbound `X-Request-Id` header if present)
 2. **RealIP** — extracts the client's real IP from proxy headers
-3. **RequestLogger** — logs `METHOD PATH STATUS DURATION REMOTE_ADDR` for every request
+3. **RequestLogger** — echoes the request ID back as the `X-Request-Id` response header, forwards it to the proxied backend, and logs one logfmt line per request: `ts=... level=info service=gateway request_id=... method=... path=... status=... duration_ms=... remote_addr=...`. See [`OBSERVABILITY.md`](../OBSERVABILITY.md) for the full schema and how to correlate logs across services.
 4. **Recoverer** — catches panics and returns 500 instead of crashing
 5. **CORS** — validates `Origin` against `CORS_ALLOWED_ORIGINS`; responds to `OPTIONS` preflight with `204`
 6. **RateLimit** — optional per-client rate limiting; a no-op unless `GATEWAY_RATE_LIMIT` is set (see **Rate limiting** below)

@@ -1,0 +1,7 @@
+goat-farm
+goat-farm.exe
+*.exe~
+*.test
+
+.vscode
+.idea

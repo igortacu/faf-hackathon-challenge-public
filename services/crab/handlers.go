@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Handlers struct {
@@ -94,9 +95,13 @@ func (h *Handlers) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go h.broadcast.OrderPlaced(order)
+	// Captured before spawning: a goroutine doesn't inherit r's context, so the
+	// correlation id must be passed in explicitly to keep the broadcast call
+	// joinable with this request's logs.
+	rid := middleware.GetReqID(r.Context())
+	go h.broadcast.OrderPlaced(order, rid)
 	for _, item := range soldOut {
-		go h.broadcast.SoldOut(item)
+		go h.broadcast.SoldOut(item, rid)
 	}
 
 	writeJSON(w, http.StatusCreated, order)

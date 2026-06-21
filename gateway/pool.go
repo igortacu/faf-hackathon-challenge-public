@@ -7,8 +7,10 @@ import (
 	"net/url"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // ProxyPool round-robins requests across a set of backend instances using a
@@ -31,7 +33,10 @@ func NewProxyPool(targets []string) *ProxyPool {
 
 		proxy := httputil.NewSingleHostReverseProxy(targetURL)
 		proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-			log.Printf("Proxy error for %s: %v", r.URL.Path, err)
+			log.Printf(
+				"ts=%s level=error service=gateway event=outbound_call request_id=%s target=%s method=%s path=%s status=502 error=%q",
+				time.Now().UTC().Format(time.RFC3339Nano), middleware.GetReqID(r.Context()), targetURL.Host, r.Method, r.URL.Path, err,
+			)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadGateway)
 			w.Write([]byte(`{"error": "Service unavailable"}`))
@@ -74,6 +79,10 @@ func PooledProxyRoute(targets []string) func(chi.Router) {
 			req.URL.Host = target.Host
 			req.URL.Path = wildcardPath
 			req.Host = target.Host
+
+			// Propagate the correlation id so the backend's own logs can be
+			// joined with the gateway's by request_id.
+			req.Header.Set("X-Request-Id", middleware.GetReqID(req.Context()))
 
 			// Query parameters are preserved automatically (RawQuery unchanged).
 

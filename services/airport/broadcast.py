@@ -1,11 +1,18 @@
+import logging
+import time
+
 import requests
 from config import BROADCAST_SERVICE_URL, INTERNAL_SECRET
+
+logger = logging.getLogger(__name__)
 
 
 class BroadcastClient:
     """Publishes airport events to the Broadcast service.
 
-    Fire-and-forget: if Broadcast is down, events are silently lost.
+    Fire-and-forget: if Broadcast is down, the event is lost, but the attempt is
+    always logged (request_id=- since this fires from the background gate-processing
+    thread, outside any inbound HTTP request — see OBSERVABILITY.md).
     """
 
     def __init__(self):
@@ -14,8 +21,10 @@ class BroadcastClient:
 
     def publish_event(self, result: dict):
         """Publish a guest-processed event. Never raises exceptions."""
+        t0 = time.perf_counter()
+        status = "-"
         try:
-            requests.post(
+            resp = requests.post(
                 f"{self.url}/airport/arrival",
                 json={
                     "channel": "resort-wide",
@@ -45,5 +54,11 @@ class BroadcastClient:
                 headers={"X-Internal-Key": self.secret, "Content-Type": "application/json"},
                 timeout=2,
             )
+            status = resp.status_code
         except Exception:
-            pass
+            status = "error"
+        finally:
+            logger.info(
+                "service=airport event=outbound_call request_id=- target=broadcast method=POST path=/airport/arrival status=%s duration_ms=%.1f",
+                status, (time.perf_counter() - t0) * 1000,
+            )

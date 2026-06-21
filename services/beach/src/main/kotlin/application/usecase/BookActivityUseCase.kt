@@ -16,7 +16,7 @@ class BookActivityUseCase(
 
     // Returns null on success, or an error constant describing why the booking
     // was rejected.
-    fun execute(activityId: String, visitorId: String): String? {
+    fun execute(activityId: String, visitorId: String, requestId: String = "-"): String? {
 
         val activity = activityRepository.findById(activityId)
             ?: return ActivityErrors.ACTIVITY_NOT_FOUND
@@ -44,7 +44,7 @@ class BookActivityUseCase(
         activityRepository.save(activity)
 
         if (activity.isFull()) {
-            broadcastPublisher.publishActivityFull(activity)
+            broadcastPublisher.publishActivityFull(activity, requestId)
         }
 
         return null

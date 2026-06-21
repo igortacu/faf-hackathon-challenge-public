@@ -131,7 +131,7 @@ async def _run_one_tool(call: dict, guest_id: str | None) -> dict:
     t0 = time.perf_counter()
     result = await execute_tool(name, arguments, guest_id)
     logger.info(
-        "rid=%s tool=%s dur_ms=%.1f args=%s -> %s",
+        "service=parrot request_id=%s tool=%s duration_ms=%.1f args=%s -> %s",
         request_id_ctx.get(), name, (time.perf_counter() - t0) * 1000, arguments, result[:200],
     )
     return {"role": "tool", "tool_call_id": call["id"], "content": result}
@@ -280,7 +280,7 @@ async def chat_stream(
         yield _sse("done", {"reply": FALLBACK})
         yield "data: [DONE]\n\n"
     except Exception:
-        logger.exception("rid=%s stream chat failed", request_id)
+        logger.exception("service=parrot request_id=%s stream chat failed", request_id)
         yield _sse("error", {"detail": "LLM service unavailable"})
     finally:
         if store is not None and guest_id:
