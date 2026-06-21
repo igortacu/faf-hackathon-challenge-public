@@ -1,6 +1,7 @@
 package com.hackathon.summer.faf.infrastructure.broadcast
 
 import com.hackathon.summer.faf.domain.model.Activity
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -10,6 +11,15 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.time.Instant
+
+// Wire shape expected by the Broadcast service's strict BeachEventSchema
+// (message, guest_id, guest_name, activity) — distinct from the internal
+// ActivityAvailabilityEvent used for in-process recording/tests.
+@Serializable
+private data class BeachBroadcastPayload(
+    val message: String,
+    val activity: String
+)
 
 class HttpActivityBroadcastPublisher(
     private val broadcastServiceUrl: String?,
@@ -36,12 +46,12 @@ class HttpActivityBroadcastPublisher(
         val start = System.nanoTime()
         var status: String = "-"
         try {
-            val payload = ActivityAvailabilityEvent(
-                type = type,
-                activityId = activity.id,
-                activityName = activity.name,
-                capacity = activity.capacity,
-                remaining = activity.remaining()
+            val payload = BeachBroadcastPayload(
+                message = if (type == "beach.activity_full")
+                    "${activity.name} just reached capacity."
+                else
+                    "A spot opened up in ${activity.name}.",
+                activity = activity.name
             )
 
             val requestBuilder = HttpRequest.newBuilder()
