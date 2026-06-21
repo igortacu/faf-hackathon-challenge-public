@@ -2,6 +2,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Custom cursor over neutral areas — buttons/links/drag handles keep their
+   own cursor-pointer/cursor-grab utility classes, which take precedence. */
+body {
+  cursor: url("./assets/cursor-paw.svg") 16 24, auto;
+}
+
 :root {
   --background: oklch(0.987 0.0031 91.437);
   --foreground: oklch(0.1759 0.0275 161.2531);
@@ -256,15 +262,30 @@
       0 0 24px color-mix(in srgb, var(--zone-accent) 18%, transparent)
     );
   transition: filter 180ms ease-out;
-  will-change: filter;
+  will-change: filter, transform;
+  animation: zone-marker-idle-bob 3.2s ease-in-out infinite;
 }
 
 .zone-marker-asset.is-locked {
   filter: grayscale(0.35) saturate(0.72) brightness(0.9);
+  animation-play-state: paused;
 }
 
 .zone-marker-asset.is-active {
-  animation: zone-marker-glow 820ms ease-out;
+  animation:
+    zone-marker-idle-bob 3.2s ease-in-out infinite,
+    zone-marker-glow 820ms ease-out;
+}
+
+@keyframes zone-marker-idle-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 @keyframes zone-marker-glow {
