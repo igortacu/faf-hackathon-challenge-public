@@ -50,7 +50,7 @@ GUEST_TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_guest_arrival_status",
-            "description": "Look up a specific guest's arrival and passport control status.",
+            "description": "Look up a specific guest's arrival and passport control status, including their queue position and estimated time remaining until they clear passport control. Use this for 'how long until I clear passport control / get through?' and similar time-to-event questions about a guest's arrival.",
             "parameters": {
                 "type": "object",
                 "properties": {
