@@ -24,7 +24,15 @@ services:
       postgres:
         condition: service_healthy
     restart: "no"
-    entrypoint: ["/bin/sh", "-c", "psql -tc \"SELECT 1 FROM pg_database WHERE datname='hotel'\" | grep -q 1 || psql -c 'CREATE DATABASE hotel;' && psql -tc \"SELECT 1 FROM pg_database WHERE datname='beach'\" | grep -q 1 || psql -c 'CREATE DATABASE beach;'"]
+    volumes:
+      - ./db/init:/init:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        psql -tc "SELECT 1 FROM pg_database WHERE datname='hotel'" | grep -q 1 || psql -c 'CREATE DATABASE hotel;'
+        psql -tc "SELECT 1 FROM pg_database WHERE datname='beach'" | grep -q 1 || psql -c 'CREATE DATABASE beach;'
+        psql -d beach -f /init/02_seed_beach.sql
 
   broadcast:
     build: ./services/broadcast

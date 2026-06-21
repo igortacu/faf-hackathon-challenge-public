@@ -33,4 +33,5 @@ INSERT INTO activities (id, name, description, capacity) VALUES
 ('ACT017', 'Sailing Basics', 'Introduction to sailing techniques.', 10),
 ('ACT018', 'Beach Cleanup', 'Community environmental activity.', 50),
 ('ACT019', 'Meditation Session', 'Relaxing guided meditation by the sea.', 20),
-('ACT020', 'Sunset Cruise', 'Boat cruise during sunset hours.', 15);
+('ACT020', 'Sunset Cruise', 'Boat cruise during sunset hours.', 15)
+ON CONFLICT (id) DO NOTHING;
