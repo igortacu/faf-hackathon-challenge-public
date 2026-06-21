@@ -27,7 +27,6 @@ class BroadcastClient:
             resp = requests.post(
                 f"{self.url}/airport/arrival",
                 json={
-                    "channel": "resort-wide",
                     "message": (
                         f"{result['name']} {result['surname']} "
                         f"(ID: {result['guest_id']}) {result['status']} at "
@@ -35,21 +34,10 @@ class BroadcastClient:
                         f"({result['gate']}). Passport: {result['passport_type']}, "
                         f"Wait: {result['wait_time_seconds']:.0f}s game time"
                     ),
-                    "sender": "airport-service",
-                    "data": {
-                        "guest_id": result["guest_id"],
-                        "name": result["name"],
-                        "surname": result["surname"],
-                        "age": result["age"],
-                        "passport_type": result["passport_type"],
-                        "priority": result["priority"],
-                        "disability": result.get("disability", False),
-                        "status": result["status"],
-                        "gate": result["gate"],
-                        "queued_at": result["queued_at"],
-                        "processed_at": result["processed_at"],
-                        "wait_time_seconds": result["wait_time_seconds"],
-                    },
+                    "guest_id": result["guest_id"],
+                    "guest_name": f"{result['name']} {result['surname']}",
+                    "gate": result["gate"],
+                    "passport_type": result["passport_type"],
                 },
                 headers={"X-Internal-Key": self.secret, "Content-Type": "application/json"},
                 timeout=2,

@@ -27,7 +27,7 @@ export class BroadcastService {
           'content-type': 'application/json',
           'X-Request-Id': requestId,
         },
-        body: JSON.stringify({ type: eventType, payload: event }),
+        body: JSON.stringify(event),
       });
       status = response.status;
 
