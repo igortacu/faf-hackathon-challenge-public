@@ -1,0 +1,7 @@
+crab
+crab.exe
+*.exe~
+*.test
+
+.vscode
+.idea

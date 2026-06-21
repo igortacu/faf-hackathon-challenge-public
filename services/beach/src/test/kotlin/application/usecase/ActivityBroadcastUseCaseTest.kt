@@ -131,6 +131,12 @@ private class InMemoryActivityRepository(
             )
         }
 
+    override fun findActivityIdByVisitor(visitorId: String): String? =
+        activity.takeIf { visitorId in it.bookedVisitors }?.id
+
+    override fun isVisitorBooked(visitorId: String): Boolean =
+        visitorId in activity.bookedVisitors
+
     override fun save(activity: Activity) = Unit
 
     override fun create(activity: Activity): Boolean = false
@@ -149,7 +155,7 @@ private class EmptyVisitorRepository : VisitorRepository {
 private class RecordingActivityBroadcastPublisher : ActivityBroadcastPublisher {
     val events = mutableListOf<ActivityAvailabilityEvent>()
 
-    override fun publishActivityFull(activity: Activity) {
+    override fun publishActivityFull(activity: Activity, requestId: String) {
         events.add(
             ActivityAvailabilityEvent(
                 type = "beach.activity_full",
@@ -161,7 +167,7 @@ private class RecordingActivityBroadcastPublisher : ActivityBroadcastPublisher {
         )
     }
 
-    override fun publishActivityAvailable(activity: Activity) {
+    override fun publishActivityAvailable(activity: Activity, requestId: String) {
         events.add(
             ActivityAvailabilityEvent(
                 type = "beach.activity_available",

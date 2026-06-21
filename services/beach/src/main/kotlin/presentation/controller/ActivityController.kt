@@ -19,6 +19,7 @@ import domain.error.ActivityErrors
 import domain.error.VisitorErrors
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
+import io.ktor.server.plugins.callid.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -47,7 +48,8 @@ class ActivityController(
 
         val error = bookActivityUseCase.execute(
             activityId = activityId,
-            visitorId = request.id
+            visitorId = request.id,
+            requestId = call.callId ?: "-"
         )
 
         if (error != null) {
@@ -76,7 +78,8 @@ class ActivityController(
 
         val error = cancelActivityUseCase.execute(
             activityId = activityId,
-            visitorId = request.id
+            visitorId = request.id,
+            requestId = call.callId ?: "-"
         )
 
         if (error != null) {

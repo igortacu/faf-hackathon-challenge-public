@@ -6,8 +6,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // ProxyRoute returns a chi route handler that proxies all requests to the target URL.
@@ -36,7 +38,10 @@ func ProxyRoute(target string) func(chi.Router) {
 
 	// Custom error handler — return 502 if backend is unreachable
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Printf("Proxy error for %s: %v", r.URL.Path, err)
+		log.Printf(
+			"ts=%s level=error service=gateway event=outbound_call request_id=%s target=%s method=%s path=%s status=502 error=%q",
+			time.Now().UTC().Format(time.RFC3339Nano), middleware.GetReqID(r.Context()), targetURL.Host, r.Method, r.URL.Path, err,
+		)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
 		w.Write([]byte(`{"error": "Service unavailable"}`))
@@ -60,6 +65,10 @@ func ProxyRoute(target string) func(chi.Router) {
 			req.URL.Host = targetURL.Host
 			req.URL.Path = wildcardPath
 			req.Host = targetURL.Host
+
+			// Propagate the correlation id so the backend's own logs can be
+			// joined with the gateway's by request_id.
+			req.Header.Set("X-Request-Id", middleware.GetReqID(req.Context()))
 
 			// Query parameters are preserved automatically (req.URL.RawQuery unchanged)
 

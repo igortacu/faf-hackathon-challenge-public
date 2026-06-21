@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -21,10 +22,19 @@ func NewBroadcastClient(baseURL string) *BroadcastClient {
 	}
 }
 
-func (c *BroadcastClient) post(path string, body any) {
+func (c *BroadcastClient) post(path string, body any, rid string) {
 	if c.baseURL == "" {
 		return
 	}
+	start := time.Now()
+	status := "-"
+	defer func() {
+		log.Printf(
+			"ts=%s level=info service=crab event=outbound_call request_id=%s target=broadcast method=POST path=%s status=%s duration_ms=%.1f",
+			time.Now().UTC().Format(time.RFC3339Nano), rid, path, status, time.Since(start).Seconds()*1000,
+		)
+	}()
+
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return
@@ -34,14 +44,17 @@ func (c *BroadcastClient) post(path string, body any) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Request-Id", rid)
 	resp, err := c.http.Do(req)
 	if err != nil {
+		status = "error"
 		return
 	}
+	status = fmt.Sprintf("%d", resp.StatusCode)
 	resp.Body.Close()
 }
 
-func (c *BroadcastClient) OrderPlaced(o Order) {
+func (c *BroadcastClient) OrderPlaced(o Order, rid string) {
 	c.post("/crab/order", map[string]any{
 		"message":    fmt.Sprintf("%s grabbed %s at the Crusty Crab! 🦀", guestLabel(o), orderSummary(o)),
 		"guest_id":   o.GuestID,
@@ -49,15 +62,15 @@ func (c *BroadcastClient) OrderPlaced(o Order) {
 		"order_id":   o.ID,
 		"items":      o.Items,
 		"total":      o.Total,
-	})
+	}, rid)
 }
 
-func (c *BroadcastClient) SoldOut(item MenuItem) {
+func (c *BroadcastClient) SoldOut(item MenuItem, rid string) {
 	c.post("/crab/sold-out", map[string]any{
 		"message": fmt.Sprintf("%s %s just sold out at the Crusty Crab!", item.Emoji, item.Name),
 		"item_id": item.ID,
 		"name":    item.Name,
-	})
+	}, rid)
 }
 
 func guestLabel(o Order) string {
