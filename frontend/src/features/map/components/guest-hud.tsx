@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { IconShieldLock } from "@tabler/icons-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarDataUri } from "@/lib/avatar";
 import { getInitials } from "@/lib/guest";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/stores/session-selectors";
@@ -89,6 +90,10 @@ export function GuestHud() {
   return (
     <div className={hudClassName} data-testid="session-role" data-role="guest">
       <Avatar className="size-10 shrink-0 border-2 border-sidebar-primary">
+        <AvatarImage
+          src={getAvatarDataUri(guest.id)}
+          alt={`${guest.name} ${guest.surname}`}
+        />
         <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
           {getInitials(guest)}
         </AvatarFallback>
