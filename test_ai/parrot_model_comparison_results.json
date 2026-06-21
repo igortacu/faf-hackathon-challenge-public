@@ -1,0 +1,72 @@
+[
+  {
+    "model": "openai/gpt-4o-mini",
+    "overall_score": 1.0,
+    "concise_answer/mean": 1.0,
+    "called_expected_tool/mean": 1.0,
+    "grounded_when_required/mean": 1.0,
+    "no_leaked_internals/mean": 1.0,
+    "answer_quality/mean": 1.0,
+    "avg_latency_ms": 2197.0,
+    "avg_prompt_tokens": 1372.3,
+    "avg_completion_tokens": 83.5,
+    "avg_total_tokens": 1455.8,
+    "avg_cost_usd": 0.000256
+  },
+  {
+    "model": "qwen/qwen-2.5-72b-instruct",
+    "overall_score": 1.0,
+    "no_leaked_internals/mean": 1.0,
+    "grounded_when_required/mean": 1.0,
+    "called_expected_tool/mean": 1.0,
+    "concise_answer/mean": 1.0,
+    "answer_quality/mean": 1.0,
+    "avg_latency_ms": 8006.4,
+    "avg_prompt_tokens": 2109.5,
+    "avg_completion_tokens": 87.5,
+    "avg_total_tokens": 2197.0,
+    "avg_cost_usd": 0.000287
+  },
+  {
+    "model": "anthropic/claude-haiku-4.5",
+    "overall_score": 1.0,
+    "grounded_when_required/mean": 1.0,
+    "called_expected_tool/mean": 1.0,
+    "concise_answer/mean": 1.0,
+    "no_leaked_internals/mean": 1.0,
+    "answer_quality/mean": 1.0,
+    "avg_latency_ms": 3615.6,
+    "avg_prompt_tokens": 2664.1,
+    "avg_completion_tokens": 148.9,
+    "avg_total_tokens": 2813.0,
+    "avg_cost_usd": 0.003409
+  },
+  {
+    "model": "meta-llama/llama-3.1-8b-instruct",
+    "overall_score": 0.96,
+    "called_expected_tool/mean": 1.0,
+    "no_leaked_internals/mean": 1.0,
+    "grounded_when_required/mean": 1.0,
+    "concise_answer/mean": 0.9,
+    "answer_quality/mean": 0.9,
+    "avg_latency_ms": 5694.6,
+    "avg_prompt_tokens": 2355.1,
+    "avg_completion_tokens": 112.4,
+    "avg_total_tokens": 2467.5,
+    "avg_cost_usd": 5e-05
+  },
+  {
+    "model": "meta-llama/llama-3.3-70b-instruct",
+    "overall_score": 0.84,
+    "no_leaked_internals/mean": 1.0,
+    "called_expected_tool/mean": 0.8,
+    "grounded_when_required/mean": 0.8,
+    "concise_answer/mean": 1.0,
+    "answer_quality/mean": 0.6,
+    "avg_latency_ms": 3505.1,
+    "avg_prompt_tokens": 2100.5,
+    "avg_completion_tokens": 69.5,
+    "avg_total_tokens": 2169.9,
+    "avg_cost_usd": 0.000227
+  }
+]

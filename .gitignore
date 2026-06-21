@@ -78,3 +78,6 @@ npm-debug.log
 .vscode
 BUG_REPORT.md
 .claude/
+.venv/
+__pycache__/
+.python-version
