@@ -17,14 +17,24 @@ export function GuestSelectionPage() {
 
   const [flipped, setFlipped] = useState(false);
 
-  function handleSelectGuest(guest: GuestProfile) {
-    selectGuest(guest);
+  async function handleSelectGuest(guest: GuestProfile) {
+    try {
+      await selectGuest(guest);
+    } catch {
+      // Token issuance failed (gateway unreachable). Proceed anyway so the user
+      // isn't stuck; authenticated calls will surface the error on the map.
+    }
     navigate("/map");
   }
 
-  function handleAdminLogin(passcode: string) {
-    loginAdmin(passcode, "Admin Observer");
-    navigate("/map");
+  async function handleAdminLogin(passcode: string) {
+    try {
+      await loginAdmin(passcode, "Admin Observer");
+      navigate("/map");
+    } catch {
+      // Server rejected the passcode — stay on the login (the card already
+      // shows a client-side hint, this guards the server-side check too).
+    }
   }
 
   return (

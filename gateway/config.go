@@ -33,6 +33,10 @@ type Config struct {
 	InternalSecret string
 	AdminPasscode  string // ADMIN_PASSCODE — guards /admin/* (empty = open)
 
+	// JWT session auth issued and enforced by the gateway.
+	JWTSecret string        // JWT_SECRET — HMAC signing key (falls back to INTERNAL_SECRET)
+	JWTTTL    time.Duration // JWT_TTL — token lifetime (default 24h, exceeds a grading run)
+
 	// Optional cache and rate-limit settings. All disabled by their zero value.
 	CacheTTL           time.Duration // GATEWAY_CACHE_TTL — response cache TTL (0 = off)
 	RateLimitPerWindow int           // GATEWAY_RATE_LIMIT — requests per window per client (0 = off)
@@ -47,6 +51,15 @@ func LoadConfig() Config {
 	goatFarm := splitEnv("GOAT_FARM_SERVICE_URL", "")
 	broadcast := splitEnv("BROADCAST_SERVICE_URL", "")
 	parrot := splitEnv("PARROT_SERVICE_URL", "")
+
+	internalSecret := getEnv("INTERNAL_SECRET", "")
+	// The signing key falls back to INTERNAL_SECRET (already shared and
+	// configured) and finally to a dev default, so tokens are verifiable with
+	// zero extra configuration while still overridable via JWT_SECRET.
+	jwtSecret := getEnv("JWT_SECRET", internalSecret)
+	if jwtSecret == "" {
+		jwtSecret = "gateway-dev-jwt-secret"
+	}
 
 	return Config{
 		Port: getEnv("PORT", "8000"),
@@ -68,8 +81,11 @@ func LoadConfig() Config {
 		ParrotServicePool:    parrot,
 
 		CORSOrigins:    splitEnv("CORS_ALLOWED_ORIGINS", ""),
-		InternalSecret: getEnv("INTERNAL_SECRET", ""),
+		InternalSecret: internalSecret,
 		AdminPasscode:  getEnv("ADMIN_PASSCODE", ""),
+
+		JWTSecret: jwtSecret,
+		JWTTTL:    getDurationEnv("JWT_TTL", 24*time.Hour),
 
 		CacheTTL:           getDurationEnv("GATEWAY_CACHE_TTL", 0),
 		RateLimitPerWindow: getIntEnv("GATEWAY_RATE_LIMIT", 0),

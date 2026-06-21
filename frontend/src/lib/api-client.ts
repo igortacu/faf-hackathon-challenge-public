@@ -3,6 +3,7 @@ import type { AxiosRequestConfig } from "axios";
 import type { ZodType } from "zod";
 
 import { env } from "@/config/env";
+import { useSessionStore } from "@/stores/session-store";
 
 export type ApiError = { ok: false; status: number; message: string };
 export type ApiResult<T> = { ok: true; data: T } | ApiError;
@@ -46,6 +47,17 @@ function getErrorMessage(data: unknown, fallback: string): string {
 
 function createJsonApi(basePath = "") {
   const instance = axios.create({ baseURL: `${env.gatewayUrl}${basePath}` });
+
+  // Attach the gateway-issued session JWT to every request. The gateway
+  // enforces identity and access level from this token; guest tokens may act
+  // only on their own guest_id, admin tokens on any.
+  instance.interceptors.request.use((config) => {
+    const token = useSessionStore.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
 
   async function request<T>(
     schema: ZodType<T>,

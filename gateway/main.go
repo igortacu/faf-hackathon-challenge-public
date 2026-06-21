@@ -27,12 +27,21 @@ func main() {
 	rl := NewRateLimiter(cfg.RateLimitPerWindow, cfg.RateLimitWindow)
 	r.Use(RateLimitMiddleware(rl))
 
+	// Server-side session auth: verify bearer JWTs and enforce the route access
+	// model (public / guest / admin) plus per-guest identity on every request.
+	r.Use(JWTEnforce(cfg.JWTSecret))
+
+	// Auth endpoints — issue and introspect session tokens.
+	r.Post("/auth/guest", AuthGuestHandler(cfg.JWTSecret, cfg.JWTTTL))
+	r.Post("/auth/admin", AuthAdminHandler(cfg.JWTSecret, cfg.AdminPasscode, cfg.JWTTTL))
+	r.Get("/auth/me", AuthMeHandler())
+
 	// Health check (aggregates all backend health endpoints)
 	r.Get("/health", HealthHandler(cfg))
 
-	// Admin: adjust the rate limiter at runtime. Guarded by X-Admin-Passcode
-	// when ADMIN_PASSCODE is configured.
-	r.Put("/admin/rate-limit", RequireAdmin(cfg.AdminPasscode, AdminRateLimitHandler(rl)))
+	// Admin: adjust the rate limiter at runtime. Admin access is enforced by
+	// JWTEnforce (the path is admin-scoped), so an admin bearer token is required.
+	r.Put("/admin/rate-limit", AdminRateLimitHandler(rl))
 
 	// Route to backend services. Each *_SERVICE_URL may list several instances
 	// (comma-separated); a pool with more than one URL is round-robined.
