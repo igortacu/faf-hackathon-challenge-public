@@ -7,6 +7,8 @@ import {
 import { ZoneIndicator } from "@/features/map/components/zone-indicator";
 import { getZone } from "@/features/map/zone-registry";
 import { GoatFarmMarker } from "@/features/goat-farm/components/goat-farm-marker";
+import { OctopusOracleMarker } from "@/features/octopus-oracle/components/octopus-oracle-marker";
+import { KikiBurgerQuest } from "@/features/kiki-burger-quest/components/kiki-burger-quest";
 
 interface ZoneLayerProps {
   mapW: number;
@@ -39,6 +41,8 @@ export function ZoneLayer({ mapW, mapH, onZoneClick }: ZoneLayerProps) {
         );
       })}
       <GoatFarmMarker mapW={mapW} mapH={mapH} />
+      <OctopusOracleMarker mapW={mapW} mapH={mapH} />
+      <KikiBurgerQuest mapW={mapW} mapH={mapH} />
     </div>
   );
 }

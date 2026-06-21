@@ -38,7 +38,7 @@ export function ZonePanelShell({
       data-testid="zone-panel"
       data-open={open}
       className={cn(
-        "fixed top-3 right-3 bottom-3 z-50 flex w-[720px] flex-col rounded-2xl p-3 transition-transform duration-300 ease-in-out [background:var(--wood-gradient)]",
+        "fixed top-3 right-3 bottom-3 z-50 flex w-[min(920px,calc(100vw-1.5rem))] flex-col rounded-2xl p-3 transition-transform duration-300 ease-in-out [background:var(--wood-gradient)]",
         open
           ? "translate-x-0 shadow-(--wood-shadow)"
           : "translate-x-[calc(100%_+_12px)] shadow-none"
@@ -71,7 +71,7 @@ export function ZonePanelShell({
           {description && (
             <p
               data-testid="zone-panel-desc"
-              className="mt-3 text-sm leading-relaxed text-muted-foreground"
+              className="mt-3 text-base leading-relaxed text-muted-foreground"
             >
               {description}
             </p>
