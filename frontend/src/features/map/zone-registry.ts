@@ -86,7 +86,7 @@ export const ZONE_REGISTRY: Record<ZoneId, ZoneDefinition> = {
     position: { x: 1080, y: 1240 },
     accent: "#ef4444",
     markerSrc: crabZoneArt,
-    markerScale: 1.2,
+    markerScale: 1.8,
   },
   [ZoneId.Parrot]: {
     id: ZoneId.Parrot,
