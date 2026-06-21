@@ -38,6 +38,12 @@ const NEED_SUBTITLE: Record<"hunger" | "thirst", string> = {
   thirst: "Kiki is thirsty — buy a drink to refill her thirst bar.",
 };
 
+// Food costs Kiki a flat 30–40 meows regardless of the crab's menu price, so a
+// burger stays affordable. Spread deterministically by menu position.
+function kikiFoodPrice(index: number): number {
+  return 30 + ((index * 5) % 11);
+}
+
 const SHOP_THEME = {
   crab: {
     title: "The Crusty Crab",
@@ -70,11 +76,13 @@ export function KikiShopPanel({
 
   const items = useMemo<ShopItem[]>(() => {
     if (shop === "crab") {
-      return (menu.data?.items ?? []).map((item) => ({
+      return (menu.data?.items ?? []).map((item, index) => ({
         id: item.id,
         label: item.name,
         icon: item.emoji,
-        price: item.price,
+        // Kiki pays an affordable island rate (30–40 meows), not the crab's
+        // full menu price, so a burger always stays within reach.
+        price: kikiFoodPrice(index),
         available: item.available && (item.remaining ?? 1) > 0,
         detail: item.description,
       }));

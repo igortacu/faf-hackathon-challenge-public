@@ -30,6 +30,26 @@ export const BLUE_TRIAL_QUESTIONS: OracleQuestion[] = [
 
 export const RED_TRIAL_SEQUENCE: OracleColor[] = ["blue", "red", "violet", "amber"];
 
+// The four pearls the reflex trial uses. Each round shuffles these into a fresh
+// order for the player to memorize and repeat.
+export const RED_TRIAL_COLORS: OracleColor[] = [
+  "blue",
+  "red",
+  "violet",
+  "amber",
+];
+
+// A random permutation of the four pearls (Fisher–Yates). Optionally seeded with
+// an injected random fn so the shuffle is testable.
+export function randomSequence(random: () => number = Math.random): OracleColor[] {
+  const colors = [...RED_TRIAL_COLORS];
+  for (let i = colors.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [colors[i], colors[j]] = [colors[j], colors[i]];
+  }
+  return colors;
+}
+
 export function evaluateQuiz(results: boolean[]) {
   const correct = results.filter(Boolean).length;
 

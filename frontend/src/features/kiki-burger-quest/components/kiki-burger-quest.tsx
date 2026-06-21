@@ -91,7 +91,7 @@ function NeedBar({
   const critical = isCritical(value);
   return (
     <div className="text-left">
-      <div className="flex items-center justify-between text-base font-black">
+      <div className="flex items-center justify-between text-2xl font-black">
         <span>
           {config.icon} {config.label}
         </span>
@@ -99,7 +99,7 @@ function NeedBar({
           {Math.round(value)}%
         </span>
       </div>
-      <div className="mt-1 h-4 overflow-hidden rounded-full bg-white/15">
+      <div className="mt-2 h-6 overflow-hidden rounded-full bg-white/15">
         <div
           className={`h-full rounded-full transition-all ${
             critical ? "bg-red-400" : "bg-emerald-400"
@@ -266,38 +266,38 @@ export function KikiBurgerQuest({ mapW, mapH }: KikiBurgerQuestProps) {
         }}
       >
         {/* Survival HUD: status, bars, wallet, level */}
-        <div className="mb-4 w-[560px] rounded-[28px] border-4 border-pink-100/80 bg-black/55 px-8 py-6 text-center text-pink-50 shadow-2xl backdrop-blur-[2px]">
-          <p className="text-3xl font-black leading-tight">{statusLine}</p>
+        <div className="mb-6 w-[760px] rounded-[36px] border-[6px] border-pink-100/80 bg-black/55 px-12 py-9 text-center text-pink-50 shadow-2xl backdrop-blur-[2px]">
+          <p className="text-5xl font-black leading-tight">{statusLine}</p>
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-7 grid gap-5">
             <NeedBar kind="hunger" value={wallet.hunger} />
             <NeedBar kind="thirst" value={wallet.thirst} />
           </div>
 
-          <div className="mt-5 flex items-center justify-center gap-4 text-lg font-black">
-            <span className="rounded-full bg-amber-300/90 px-5 py-1 text-amber-950">
+          <div className="mt-7 flex items-center justify-center gap-5 text-2xl font-black">
+            <span className="rounded-full bg-amber-300/90 px-7 py-2 text-amber-950">
               🐾 {wallet.meows} meows
             </span>
-            <span className="rounded-full bg-pink-200/90 px-5 py-1 text-pink-950">
+            <span className="rounded-full bg-pink-200/90 px-7 py-2 text-pink-950">
               Lv {level.level} · {level.title}
             </span>
           </div>
-          <div className="mx-auto mt-3 h-2.5 max-w-[420px] overflow-hidden rounded-full bg-white/15">
+          <div className="mx-auto mt-4 h-4 max-w-[560px] overflow-hidden rounded-full bg-white/15">
             <div
               className="h-full rounded-full bg-amber-300 transition-all"
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>
           {upcoming ? (
-            <p className="mt-2 text-sm text-pink-100/70">
+            <p className="mt-3 text-xl text-pink-100/70">
               {upcoming.threshold - wallet.lifetimeMeows} meows to{" "}
               {upcoming.title}
             </p>
           ) : (
-            <p className="mt-2 text-sm text-amber-200">Max level reached!</p>
+            <p className="mt-3 text-xl text-amber-200">Max level reached!</p>
           )}
           {wallet.inventory.length > 0 && (
-            <p className="mt-3 text-2xl" aria-label="Kiki's haul">
+            <p className="mt-4 text-4xl" aria-label="Kiki's haul">
               {wallet.inventory
                 .slice(0, 8)
                 .map((entry) => entry.split(" ")[0])

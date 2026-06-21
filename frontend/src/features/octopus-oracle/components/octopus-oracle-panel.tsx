@@ -5,19 +5,26 @@ import {
   IconSparkles,
   IconX,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import {
   BLUE_TRIAL_QUESTIONS,
-  RED_TRIAL_SEQUENCE,
   evaluateQuiz,
   evaluateSequence,
+  randomSequence,
   type OracleColor,
 } from "@/features/octopus-oracle/lib/octopus-oracle";
 
 type OracleMode = "choice" | "blue" | "red" | "result";
+
+// The reflex trial flashes the target order, then takes the player's taps.
+type RedPhase = "watch" | "input";
+
+// Timing for the watch phase: each pearl lights for FLASH_ON, then a gap.
+const FLASH_ON_MS = 620;
+const FLASH_GAP_MS = 260;
 
 interface OctopusOraclePanelProps {
   open: boolean;
@@ -51,9 +58,61 @@ export function OctopusOraclePanel({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [sequenceInput, setSequenceInput] = useState<OracleColor[]>([]);
   const [result, setResult] = useState<ResultState | null>(null);
+  // Reflex trial state: the shuffled target, whether we're flashing or taking
+  // input, and which pearl is currently lit during the watch phase (-1 = none).
+  const [redTarget, setRedTarget] = useState<OracleColor[]>([]);
+  const [redPhase, setRedPhase] = useState<RedPhase>("watch");
+  const [flashIndex, setFlashIndex] = useState(-1);
+
+  // Drive the watch-phase animation: light each pearl in turn, then hand control
+  // to the player. Runs only while the red trial is mid-flash.
+  useEffect(() => {
+    if (mode !== "red" || redPhase !== "watch" || redTarget.length === 0) {
+      return;
+    }
+
+    // flashIndex is reset to -1 by startRedTrial/replayRedSequence before this
+    // effect runs, so the watch loop can start straight into scheduling.
+    let step = 0;
+    const timers: number[] = [];
+
+    const lightNext = () => {
+      if (step >= redTarget.length) {
+        setFlashIndex(-1);
+        timers.push(window.setTimeout(() => setRedPhase("input"), FLASH_GAP_MS));
+        return;
+      }
+      const current = step;
+      setFlashIndex(current);
+      timers.push(
+        window.setTimeout(() => {
+          setFlashIndex(-1);
+          step += 1;
+          timers.push(window.setTimeout(lightNext, FLASH_GAP_MS));
+        }, FLASH_ON_MS)
+      );
+    };
+
+    timers.push(window.setTimeout(lightNext, FLASH_GAP_MS));
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [mode, redPhase, redTarget]);
 
   if (!open) {
     return null;
+  }
+
+  function startRedTrial() {
+    setSequenceInput([]);
+    setRedTarget(randomSequence());
+    setFlashIndex(-1);
+    setRedPhase("watch");
+    setMode("red");
+  }
+
+  function replayRedSequence() {
+    setSequenceInput([]);
+    setFlashIndex(-1);
+    setRedPhase("watch");
   }
 
   function resetToChoice() {
@@ -61,6 +120,9 @@ export function OctopusOraclePanel({
     setAnswers({});
     setSequenceInput([]);
     setResult(null);
+    setRedTarget([]);
+    setRedPhase("watch");
+    setFlashIndex(-1);
   }
 
   function closePanel() {
@@ -93,14 +155,19 @@ export function OctopusOraclePanel({
   }
 
   function chooseColor(color: OracleColor) {
-    const nextInput = [...sequenceInput, color];
-    setSequenceInput(nextInput);
-
-    if (nextInput.length !== RED_TRIAL_SEQUENCE.length) {
+    // Taps only count once the watch phase is over.
+    if (redPhase !== "input") {
       return;
     }
 
-    const passed = evaluateSequence(RED_TRIAL_SEQUENCE, nextInput);
+    const nextInput = [...sequenceInput, color];
+    setSequenceInput(nextInput);
+
+    if (nextInput.length !== redTarget.length) {
+      return;
+    }
+
+    const passed = evaluateSequence(redTarget, nextInput);
     setResult(
       passed
         ? {
@@ -171,13 +238,13 @@ export function OctopusOraclePanel({
               <button
                 type="button"
                 className="rounded-[22px] border border-red-300/40 bg-red-500/15 p-8 text-left shadow-lg transition hover:bg-red-500/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200/70"
-                onClick={() => setMode("red")}
+                onClick={startRedTrial}
               >
                 <IconRipple className="mb-6 size-14 text-red-200" aria-hidden="true" />
                 <h3 className="text-4xl font-black">Red pill</h3>
                 <p className="mt-4 text-xl leading-relaxed text-white/70">
-                  Repeat the oracle's pearl sequence exactly before the ink
-                  spreads.
+                  Watch the oracle flash four pearls, then tap them back in the
+                  exact order before the ink spreads.
                 </p>
               </button>
             </div>
@@ -246,26 +313,42 @@ export function OctopusOraclePanel({
 
           {mode === "red" && (
             <div className="rounded-[22px] border border-red-300/20 bg-black/25">
-              <div className="rounded-t-[22px] bg-red-500 px-8 py-5 text-red-50">
+              <div className="flex items-center justify-between gap-4 rounded-t-[22px] bg-red-500 px-8 py-5 text-red-50">
                 <h3 className="text-2xl font-black uppercase tracking-wide">
                   Reflex trial
                 </h3>
+                <span className="rounded-full bg-white/25 px-5 py-2 text-base font-black">
+                  {redPhase === "watch"
+                    ? "Watch the pearls"
+                    : `Your turn · ${sequenceInput.length}/${redTarget.length}`}
+                </span>
               </div>
 
               <div className="p-8">
                 <p className="text-xl text-white/72">
-                  Memorize the oracle's pearl order, then repeat it below.
+                  {redPhase === "watch"
+                    ? "The oracle is flashing the order. Watch closely…"
+                    : "Tap the four pearls in the exact order they lit up."}
                 </p>
 
-                <div className="mt-6 flex flex-wrap gap-4">
-                  {RED_TRIAL_SEQUENCE.map((color, index) => (
-                    <div
-                      key={`${color}-${index}`}
-                      className={`flex size-20 items-center justify-center rounded-full text-base font-black shadow-lg ${COLOR_STYLES[color]}`}
-                    >
-                      {index + 1}
-                    </div>
-                  ))}
+                {/* The four pearls. During the watch phase the active one lights
+                    up; during input they sit dim as a reference board. */}
+                <div className="mt-6 flex flex-wrap justify-center gap-6">
+                  {redTarget.map((color, index) => {
+                    const lit = redPhase === "watch" && flashIndex === index;
+                    return (
+                      <div
+                        key={`${color}-${index}`}
+                        className={`flex size-28 items-center justify-center rounded-full text-3xl font-black shadow-lg transition-all duration-150 ${
+                          lit
+                            ? `scale-110 ring-4 ring-white ${COLOR_STYLES[color]}`
+                            : "scale-95 bg-white/10 text-white/30"
+                        }`}
+                      >
+                        {lit ? "●" : "?"}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -273,7 +356,8 @@ export function OctopusOraclePanel({
                     <button
                       type="button"
                       key={color}
-                      className={`rounded-full px-6 py-5 text-xl font-black transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 ${COLOR_STYLES[color]}`}
+                      disabled={redPhase !== "input"}
+                      className={`rounded-full px-6 py-5 text-xl font-black transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-40 ${COLOR_STYLES[color]}`}
                       onClick={() => chooseColor(color)}
                     >
                       {colorLabel(color)}
@@ -306,9 +390,10 @@ export function OctopusOraclePanel({
                   type="button"
                   variant="outline"
                   className="h-12 px-6 text-base"
-                  onClick={() => setSequenceInput([])}
+                  disabled={redPhase === "watch"}
+                  onClick={replayRedSequence}
                 >
-                  Reset sequence
+                  Watch again
                 </Button>
               </div>
             </div>

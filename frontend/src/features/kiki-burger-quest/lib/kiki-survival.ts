@@ -7,10 +7,11 @@ export type NeedKind = "hunger" | "thirst";
 
 // Bars run 0..100. 100 is full and happy, 0 is desperate.
 export const NEED_MAX = 100;
-export const NEED_START = 25;
+export const NEED_START = 30;
 
-// How much one bar drains per real second of idling.
-export const NEED_DRAIN_PER_SECOND = 1.5;
+// How much one bar drains per real second of idling. A full bar lasts a few
+// minutes, so Kiki gets peckish at a relaxed pace rather than constantly.
+export const NEED_DRAIN_PER_SECOND = 0.4;
 
 // A meal/drink costs this many meows and refills this much of the bar.
 export const NEED_PRICE_MEOWS = 40;
