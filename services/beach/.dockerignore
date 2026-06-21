@@ -1,0 +1,10 @@
+build
+.gradle
+out
+.kotlin
+generated
+*.class
+*.jar
+
+.vscode
+.idea

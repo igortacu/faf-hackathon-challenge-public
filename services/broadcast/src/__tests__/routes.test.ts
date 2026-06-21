@@ -8,12 +8,25 @@ import { SseClient } from "./sse-client.js";
 
 const ADMIN_PASSCODE = "test-passcode";
 
+// Mirrors the root .env service tokens (see serviceAuth.ts) — set per-run so
+// GET /events auth has something to check identities against.
+const FE_TOKEN = "test-fe-token";
+const HOTEL_TOKEN = "test-hotel-token";
+const BEACH_TOKEN = "test-beach-token";
+const AIRPORT_TOKEN = "test-airport-token";
+const PARROT_TOKEN = "test-parrot-token";
+
 let server: http.Server;
 let port: number;
 
 before(async () => {
   // Admin routes fail closed unless ADMIN_PASSCODE is configured.
   process.env.ADMIN_PASSCODE = ADMIN_PASSCODE;
+  process.env.FE_TOKEN = FE_TOKEN;
+  process.env.HOTEL_TOKEN = HOTEL_TOKEN;
+  process.env.BEACH_TOKEN = BEACH_TOKEN;
+  process.env.AIRPORT_TOKEN = AIRPORT_TOKEN;
+  process.env.PARROT_TOKEN = PARROT_TOKEN;
   server = http.createServer(createApp());
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   port = (server.address() as AddressInfo).port;
@@ -37,13 +50,13 @@ async function post(
   return { status: res.status, json };
 }
 
-/** Connects a listener, posts one event, and returns the first frame it receives. */
+/** Connects as the frontend (full read access), posts one event, and returns the first frame it receives. */
 async function publishAndReceive(
   path: string,
   body: unknown,
   headers: Record<string, string> = {}
 ) {
-  const client = await SseClient.connect(port);
+  const client = await SseClient.connect(port, { headers: { "X-Service-Token": FE_TOKEN } });
   try {
     const { status, json } = await post(path, body, headers);
     assert.equal(status, 200, `${path} should respond 200`);
@@ -164,7 +177,11 @@ describe("broadcast routes deliver to the listener", () => {
   });
 
   it("fans a single event out to multiple connected listeners", async () => {
-    const [a, b] = await Promise.all([SseClient.connect(port), SseClient.connect(port)]);
+    const feHeaders = { headers: { "X-Service-Token": FE_TOKEN } };
+    const [a, b] = await Promise.all([
+      SseClient.connect(port, feHeaders),
+      SseClient.connect(port, feHeaders),
+    ]);
     try {
       await post("/public", { guestName: "Alan Turing", message: "Tea at 4" });
       await Promise.all([a.waitForFrames(1), b.waitForFrames(1)]);
@@ -255,6 +272,76 @@ describe("payloads are validated against a concrete schema per message type", ()
       guestName: "Grace Hopper",
     });
     assert.equal(status, 400);
+  });
+});
+
+describe("GET /events enforces per-service channel access", () => {
+  it("rejects a connection with no token (401)", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/events`);
+    assert.equal(res.status, 401);
+  });
+
+  it("rejects a connection with an unrecognized token (401)", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/events`, {
+      headers: { "X-Service-Token": "not-a-real-token" },
+    });
+    assert.equal(res.status, 401);
+  });
+
+  it("frontend has full read access, including public announcements", async () => {
+    const client = await SseClient.connect(port, {
+      headers: { "X-Service-Token": FE_TOKEN },
+    });
+    try {
+      await post("/public", { guestName: "Ada", message: "Hi all" });
+      await client.waitForFrames(1);
+      assert.equal((client.frames[0].data as Record<string, any>).channel, "broadcast");
+    } finally {
+      client.close();
+    }
+  });
+
+  it("beach receives hotel events but not public announcements", async () => {
+    const client = await SseClient.connect(port, {
+      headers: { "X-Service-Token": BEACH_TOKEN },
+    });
+    try {
+      // Posted first: beach is not authorised for the broadcast channel, so this
+      // must never produce a frame, even though it lands before the hotel event.
+      await post("/public", { guestName: "Ada", message: "Hi all" });
+      await post("/hotel/confirm", { message: "Room confirmed", guest_id: "g-9" });
+
+      await client.waitForFrames(1);
+      assert.equal(client.frames.length, 1, "only the authorised hotel event should arrive");
+      assert.equal((client.frames[0].data as Record<string, any>).channel, "hotel");
+    } finally {
+      client.close();
+    }
+  });
+
+  it("airport is authenticated but has no read entitlements at all", async () => {
+    const client = await SseClient.connect(port, {
+      headers: { "X-Service-Token": AIRPORT_TOKEN },
+    });
+    try {
+      await post("/public", { guestName: "Ada", message: "Hi all" });
+      await post("/airport/arrival", { message: "Ada arrived", guest_id: "g-1" });
+
+      assert.equal(client.frames.length, 0, "airport must not receive any channel, including its own");
+    } finally {
+      client.close();
+    }
+  });
+
+  it("a recognized token also works via ?token= query param (for EventSource)", async () => {
+    const client = await SseClient.connect(port, { path: `/events?token=${FE_TOKEN}` });
+    try {
+      await post("/public", { guestName: "Ada", message: "Via query token" });
+      await client.waitForFrames(1);
+      assert.equal((client.frames[0].data as Record<string, any>).message, "Via query token");
+    } finally {
+      client.close();
+    }
   });
 });
 

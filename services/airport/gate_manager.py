@@ -305,6 +305,31 @@ class GateManager:
                     return i + 1
         return None
 
+    def get_estimated_wait(self, guest_id: str, gate_id: str) -> float | None:
+        """Estimate the time (game seconds) until this guest clears passport control.
+
+        Mirrors the enqueue-time estimate (`ahead * processing_time`) but computed
+        live from the guest's CURRENT position, so it shrinks as the queue advances.
+        `ahead` counts everyone who must be processed before this guest, including
+        the person in the booth right now. Returns 0 for the guest currently being
+        processed, and None if the guest is not waiting at this gate (e.g. already
+        processed, held, or unknown) — so callers can say "can't determine" rather
+        than report a fabricated number.
+        """
+        gate = self.gates.get(gate_id)
+        if gate is None:
+            return None
+        with gate.lock:
+            if gate.currently_processing and gate.currently_processing["guest_id"] == guest_id:
+                return 0.0
+            for i, g in enumerate(gate.queue):
+                if g["guest_id"] == guest_id:
+                    ahead = i
+                    if gate.currently_processing:
+                        ahead += 1
+                    return ahead * gate.processing_time
+        return None
+
     def get_all_gates_status(self) -> dict:
         now = game_now()
         gates_list = []

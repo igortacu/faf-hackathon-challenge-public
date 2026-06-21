@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAvatarDataUri } from "@/lib/avatar";
 import { getInitials } from "@/lib/guest";
 import type { GuestProfile } from "@/types/guest";
 
@@ -29,7 +30,11 @@ export function GuestCard({ guest, onSelect }: GuestCardProps) {
 
       <CardHeader className="relative">
         <div className="flex items-start justify-between gap-4">
-          <Avatar className="size-16 rotate-[-3deg] border-4 border-secondary bg-primary text-xl font-bold text-primary-foreground shadow-md">
+          <Avatar className="size-16 rotate-[-3deg] border-4 border-secondary bg-primary text-xl font-bold text-primary-foreground shadow-md transition-transform duration-200 group-hover:rotate-0">
+            <AvatarImage
+              src={getAvatarDataUri(guest.id)}
+              alt={`${guest.name} ${guest.surname}`}
+            />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {initials}
             </AvatarFallback>

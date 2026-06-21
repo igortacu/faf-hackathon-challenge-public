@@ -13,7 +13,7 @@ class CancelActivityUseCase(
 
     // Returns null on success, or an error constant describing why the
     // cancellation was rejected.
-    fun execute(activityId: String, visitorId: String): String? {
+    fun execute(activityId: String, visitorId: String, requestId: String = "-"): String? {
 
         val activity = activityRepository.findById(activityId)
             ?: return ActivityErrors.ACTIVITY_NOT_FOUND
@@ -28,7 +28,7 @@ class CancelActivityUseCase(
         activityRepository.save(activity)
 
         if (wasFull && !activity.isFull()) {
-            broadcastPublisher.publishActivityAvailable(activity)
+            broadcastPublisher.publishActivityAvailable(activity, requestId)
         }
 
         return null

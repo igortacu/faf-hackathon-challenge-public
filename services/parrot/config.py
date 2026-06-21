@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     llm_base_url: str = "https://openrouter.ai/api/v1"
     llm_api_key: str = ""
-    llm_model: str = "meta-llama/llama-3.1-8b-instruct"
+    llm_model: str = "openai/gpt-4o-mini"
 
     # Sampling params for the assistant. Low temperature keeps tool-grounded answers
     # faithful and consistent; max_tokens keeps replies chat-bubble sized and bounds cost.

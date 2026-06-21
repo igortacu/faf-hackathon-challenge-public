@@ -3,6 +3,7 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from fastapi import FastAPI, Request
 from context_loader import load_context
 from services import close_client
@@ -45,9 +46,9 @@ async def request_context(request: Request, call_next):
     start = time.perf_counter()
     response = await call_next(request)
     logger.info(
-        "rid=%s method=%s path=%s status=%s dur_ms=%.1f",
-        rid, request.method, request.url.path, response.status_code,
-        (time.perf_counter() - start) * 1000,
+        "ts=%s service=parrot request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+        datetime.now(timezone.utc).isoformat(), rid, request.method, request.url.path,
+        response.status_code, (time.perf_counter() - start) * 1000,
     )
     response.headers["X-Request-ID"] = rid
     return response

@@ -20,7 +20,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
-	r.Use(chimw.Logger)
+	r.Use(RequestLogger)
 	r.Use(chimw.Recoverer)
 
 	r.Get("/health", h.Health)

@@ -8,6 +8,7 @@ import cursedRoutes from "./routes/cursed.js";
 import publicRoutes from "./routes/public.js";
 import adminRoutes from "./routes/admin.js";
 import eventRoutes from "./routes/events.js";
+import { requestLogger } from "./requestLogger.js";
 
 // Builds the Express app with all routes wired. Kept separate from server.ts
 // so tests can mount the app without binding a fixed port.
@@ -15,6 +16,7 @@ export function createApp(): Express {
   const app = express();
 
   app.use(express.json());
+  app.use(requestLogger());
 
   app.get("/health", (_req, res) => {
     res.json({ status: "healthy" });

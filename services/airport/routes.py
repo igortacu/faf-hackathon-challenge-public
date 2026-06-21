@@ -33,8 +33,13 @@ def register_routes(app):
             return jsonify({"error": "Guest not found"}), 404
 
         position = None
+        # Time remaining until the guest clears control (game seconds). Only
+        # meaningful while still waiting; None for processed/held guests so the
+        # assistant says "can't determine" instead of guessing a number.
+        estimated_wait_seconds = None
         if guest["status"] in ("queued", "processing", "held"):
             position = app.gate_manager.get_guest_position(guest_id, guest["gate"])
+            estimated_wait_seconds = app.gate_manager.get_estimated_wait(guest_id, guest["gate"])
 
         if guest["status"] == "processed":
             wait_time = guest["wait_time_seconds"]
@@ -49,6 +54,7 @@ def register_routes(app):
             "queued_at": guest["queued_at"],
             "processed_at": guest.get("processed_at"),
             "wait_time_seconds": wait_time,
+            "estimated_wait_seconds": estimated_wait_seconds,
         }), 200
 
     @app.route("/arrivals", methods=["GET"])

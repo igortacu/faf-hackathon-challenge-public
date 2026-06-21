@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+import time
+from urllib.parse import urlparse
 import httpx
 from config import settings
 from tracing import request_id_ctx
@@ -28,6 +30,31 @@ def _hdrs() -> dict:
     return {"X-Request-ID": rid} if rid and rid != "-" else {}
 
 
+def _target_name(url: str) -> str:
+    """Derive a short service name from a base URL for the outbound_call log, e.g.
+    "http://airport:3001" -> "airport"."""
+    return urlparse(url).hostname or url
+
+
+async def _call(method: str, url: str, **kwargs) -> httpx.Response:
+    """Times and logs a single outbound call to another internal service, then
+    returns the response (caller still does its own raise_for_status/json)."""
+    target = _target_name(url)
+    path = urlparse(url).path or "/"
+    t0 = time.perf_counter()
+    status: int | str = "-"
+    try:
+        r = await _get_client().request(method, url, headers=_hdrs(), **kwargs)
+        status = r.status_code
+        return r
+    finally:
+        logger.info(
+            "service=parrot event=outbound_call request_id=%s target=%s method=%s path=%s status=%s duration_ms=%.1f",
+            request_id_ctx.get(), target, method, path, status,
+            (time.perf_counter() - t0) * 1000,
+        )
+
+
 async def close_client():
     global _client
     if _client and not _client.is_closed:
@@ -36,37 +63,37 @@ async def close_client():
 
 
 async def get_airport_stats() -> str:
-    r = await _get_client().get(f"{settings.airport_service_url}/stats", headers=_hdrs())
+    r = await _call("GET", f"{settings.airport_service_url}/stats")
     r.raise_for_status()
     return json.dumps(r.json())
 
 
 async def get_airport_queue_status() -> str:
-    r = await _get_client().get(f"{settings.airport_service_url}/queue", headers=_hdrs())
+    r = await _call("GET", f"{settings.airport_service_url}/queue")
     r.raise_for_status()
     return json.dumps(r.json())
 
 
 async def get_hotel_rooms() -> str:
-    r = await _get_client().get(f"{settings.hotel_service_url}/rooms", headers=_hdrs())
+    r = await _call("GET", f"{settings.hotel_service_url}/rooms")
     r.raise_for_status()
     return json.dumps(r.json())
 
 
 async def get_crab_menu() -> str:
-    r = await _get_client().get(f"{settings.crab_service_url}/menu", headers=_hdrs())
+    r = await _call("GET", f"{settings.crab_service_url}/menu")
     r.raise_for_status()
     return json.dumps(r.json())
 
 
 async def get_guest_arrival_status(guest_id: str) -> str:
-    r = await _get_client().get(f"{settings.airport_service_url}/arrivals/{guest_id}", headers=_hdrs())
+    r = await _call("GET", f"{settings.airport_service_url}/arrivals/{guest_id}")
     r.raise_for_status()
     return json.dumps(r.json())
 
 
 async def get_guest_reservation(guest_id: str) -> str:
-    r = await _get_client().get(f"{settings.hotel_service_url}/reservation/by-guest/{guest_id}", headers=_hdrs())
+    r = await _call("GET", f"{settings.hotel_service_url}/reservation/by-guest/{guest_id}")
     r.raise_for_status()
     return json.dumps(r.json())
 
@@ -78,11 +105,9 @@ async def get_guest_journey_status(guest_id: str) -> str:
     inside the result rather than failing the whole tool, so the assistant can still report
     whatever did resolve (e.g. arrival cleared but no booking yet).
     """
-    client = _get_client()
-
     async def _leg(url: str) -> dict:
         try:
-            r = await client.get(url, headers=_hdrs())
+            r = await _call("GET", url)
             r.raise_for_status()
             return r.json()
         except httpx.HTTPStatusError as e:
@@ -102,10 +127,10 @@ async def notify_cursed(guest_id: str, message: str, triggered_words: list[str])
     guest's chat message trips the profanity filter. Fire-and-forget: a broadcast
     outage never affects the chat response."""
     try:
-        r = await _get_client().post(
+        r = await _call(
+            "POST",
             f"{settings.broadcast_service_url}/cursed",
             json={"guest_id": guest_id, "message": message, "triggered_word": triggered_words},
-            headers=_hdrs(),
         )
         r.raise_for_status()
     except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError):

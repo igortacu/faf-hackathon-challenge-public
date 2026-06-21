@@ -4,9 +4,9 @@ import com.hackathon.summer.faf.domain.model.Activity
 import kotlinx.serialization.Serializable
 
 interface ActivityBroadcastPublisher {
-    fun publishActivityFull(activity: Activity)
+    fun publishActivityFull(activity: Activity, requestId: String = "-")
 
-    fun publishActivityAvailable(activity: Activity)
+    fun publishActivityAvailable(activity: Activity, requestId: String = "-")
 }
 
 @Serializable
@@ -19,7 +19,7 @@ data class ActivityAvailabilityEvent(
 )
 
 object NoopActivityBroadcastPublisher : ActivityBroadcastPublisher {
-    override fun publishActivityFull(activity: Activity) = Unit
+    override fun publishActivityFull(activity: Activity, requestId: String) = Unit
 
-    override fun publishActivityAvailable(activity: Activity) = Unit
+    override fun publishActivityAvailable(activity: Activity, requestId: String) = Unit
 }

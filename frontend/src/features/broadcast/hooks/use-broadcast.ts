@@ -45,7 +45,8 @@ export function useBroadcast() {
       if (!activeRef.current) return;
 
       const base = env.gatewayUrl.replace(/\/+$/, "");
-      const es = new EventSource(`${base}${BROADCAST_PATH}`);
+      const query = env.feToken ? `?token=${encodeURIComponent(env.feToken)}` : "";
+      const es = new EventSource(`${base}${BROADCAST_PATH}${query}`);
       connectionRef.current = es;
 
       es.onopen = () => {
